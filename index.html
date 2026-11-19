@@ -212,11 +212,8 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="openFirebaseConfigModal()" class="cursor-pointer px-3 py-1.5 rounded-xl text-xs font-medium bg-elevated border border-zinc-800 text-zinc-300 hover:text-white transition-colors">
-                        Configurar Nube
-                    </button>
-                    <button onclick="openAuthModal()" class="cursor-pointer px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
-                        Acceder / Crear Cuenta
+                    <button onclick="openAuthModal()" class="cursor-pointer px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                        Iniciar Sesión / Crear Cuenta
                     </button>
                 </div>
             </div>
@@ -515,7 +512,7 @@
             <!-- Vista de Inicio de Sesión / Registro -->
             <div id="auth-form-view" class="space-y-4">
                 <!-- Alerta si falta configuración de Firebase -->
-                <div id="firebase-missing-notice" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-2">
+                <div id="firebase-missing-notice" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-2">
                     <p class="font-semibold flex items-center gap-1.5">
                         <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
                         Proyecto Firebase requerido para nube
@@ -773,19 +770,26 @@
         const LOCAL_STORAGE_KEY = 'novafinance_clp_oled_v1';
         const FB_CONFIG_KEY = 'novafinance_firebase_config_v1';
 
+        const DEFAULT_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDUSeyVhrM9BzosT3m9Dinw-m_WewmIPAQ",
+            authDomain: "finanzas-70336.firebaseapp.com",
+            projectId: "finanzas-70336",
+            storageBucket: "finanzas-70336.firebasestorage.app",
+            messagingSenderId: "393200485089",
+            appId: "1:393200485089:web:405cafa5a2b4fd4e282da0"
+        };
+
         let transactions = [];
         let currentFilter = 'all';
         let currentTxType = 'expense';
         let authMode = 'login';
-        let cashflowChartInstance = null;
-        let categoryChartInstance = null;
-
-        // Estado Firebase
+        let currentUser = null;
         let firebaseApp = null;
         let auth = null;
         let db = null;
-        let currentUser = null;
         let unsubscribeSnapshot = null;
+        let cashflowChartInstance = null;
+        let categoryChartInstance = null;
 
         const clpFormatter = new Intl.NumberFormat('es-CL', {
             style: 'currency',
@@ -799,15 +803,15 @@
 
         const categoryMeta = {
             'Sueldo': { icon: 'briefcase', color: '#10b981' },
-            'Ventas/Proyectos': { icon: 'laptop', color: '#14b8a6' },
-            'Inversiones': { icon: 'trending-up', color: '#22c55e' },
+            'Ventas/Proyectos': { icon: 'sparkles', color: '#34d399' },
+            'Inversiones': { icon: 'trending-up', color: '#06b6d4' },
             'Arriendo/Dividendo': { icon: 'home', color: '#6366f1' },
             'Supermercado': { icon: 'shopping-cart', color: '#f59e0b' },
-            'Cuentas/Servicios': { icon: 'zap', color: '#3b82f6' },
-            'Transporte': { icon: 'car', color: '#06b6d4' },
-            'Salud': { icon: 'heart-pulse', color: '#ef4444' },
-            'Ocio': { icon: 'film', color: '#ec4899' },
-            'Otros': { icon: 'package', color: '#71717a' }
+            'Cuentas/Servicios': { icon: 'zap', color: '#8b5cf6' },
+            'Transporte': { icon: 'car', color: '#3b82f6' },
+            'Salud': { icon: 'heart-pulse', color: '#ec4899' },
+            'Ocio': { icon: 'coffee', color: '#f97316' },
+            'Otros': { icon: 'circle-dot', color: '#71717a' }
         };
 
         function getDemoTransactions() {
@@ -818,12 +822,12 @@
                 return d.toISOString().split('T')[0];
             };
             return [
-                { id: 'demo_1', type: 'income', amount: 1850000, title: 'Sueldo Líquido Mensual', category: 'Sueldo', date: fmt(2) },
-                { id: 'demo_2', type: 'expense', amount: 520000, title: 'Arriendo Departamento', category: 'Arriendo/Dividendo', date: fmt(3) },
-                { id: 'demo_3', type: 'expense', amount: 145000, title: 'Compra Supermercado', category: 'Supermercado', date: fmt(5) },
-                { id: 'demo_4', type: 'income', amount: 350000, title: 'Proyecto Freelance', category: 'Ventas/Proyectos', date: fmt(7) },
-                { id: 'demo_5', type: 'expense', amount: 68500, title: 'Luz, Agua e Internet', category: 'Cuentas/Servicios', date: fmt(9) },
-                { id: 'demo_6', type: 'expense', amount: 48000, title: 'Bencina y Tag', category: 'Transporte', date: fmt(12) }
+                { id: 'demo-1', type: 'income', amount: 1850000, title: 'Sueldo Líquido Mensual', category: 'Sueldo', date: fmt(12) },
+                { id: 'demo-2', type: 'expense', amount: 520000, title: 'Arriendo Departamento', category: 'Arriendo/Dividendo', date: fmt(10) },
+                { id: 'demo-3', type: 'expense', amount: 145000, title: 'Compra Mensual Supermercado', category: 'Supermercado', date: fmt(7) },
+                { id: 'demo-4', type: 'income', amount: 320000, title: 'Proyecto Freelance Diseño', category: 'Ventas/Proyectos', date: fmt(5) },
+                { id: 'demo-5', type: 'expense', amount: 68500, title: 'Luz, Agua e Internet Fibra', category: 'Cuentas/Servicios', date: fmt(3) },
+                { id: 'demo-6', type: 'expense', amount: 42000, title: 'Carga Tarjeta Bip! y Bencina', category: 'Transporte', date: fmt(1) }
             ];
         }
 
@@ -839,12 +843,13 @@
             const saved = localStorage.getItem(FB_CONFIG_KEY);
             if (saved) {
                 try {
-                    return JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.apiKey && parsed.projectId) return parsed;
                 } catch {
-                    return null;
+                    // Continuar hacia DEFAULT_FIREBASE_CONFIG
                 }
             }
-            return null;
+            return DEFAULT_FIREBASE_CONFIG;
         }
 
         function initFirebase() {
@@ -861,85 +866,66 @@
                     auth = getAuth(firebaseApp);
                     db = getFirestore(firebaseApp);
 
-                    // Manejar retorno de Google Redirect en móviles/PWA
-                    getRedirectResult(auth).catch(() => {});
+                    getRedirectResult(auth).catch((err) => {
+                        console.error('Error redirect auth:', err);
+                    });
 
                     onAuthStateChanged(auth, async (user) => {
                         currentUser = user;
-                        updateAuthUI();
-
                         if (unsubscribeSnapshot) {
                             unsubscribeSnapshot();
                             unsubscribeSnapshot = null;
                         }
 
                         if (user) {
-                            await migrateLocalDataToCloudIfNeeded(user.uid);
+                            await migrateLocalToCloudIfNeeded(user.uid);
                             subscribeToUserTransactions(user.uid);
                             closeAuthModal();
                         } else {
                             loadLocalTransactions();
                             updateUI();
                         }
+                        updateAuthUI();
                     });
+                    return;
                 } catch (err) {
-                    console.error("Error inicializando Firebase:", err);
-                    showToast("Error en configuración Firebase");
+                    console.error('Error inicializando Firebase:', err);
                 }
-            } else {
-                if (missingNotice) missingNotice.classList.remove('hidden');
-                loadLocalTransactions();
-                updateUI();
             }
+
+            if (missingNotice) missingNotice.classList.remove('hidden');
+            loadLocalTransactions();
+            updateAuthUI();
+            updateUI();
         }
 
-        // Migra automáticamente registros locales no sincronizados al iniciar sesión
-        async function migrateLocalDataToCloudIfNeeded(uid) {
-            const rawLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (!rawLocal) return;
-
-            let localList = [];
+        async function migrateLocalToCloudIfNeeded(uid) {
             try {
-                localList = JSON.parse(rawLocal);
-            } catch {
-                return;
-            }
+                const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (!stored) return;
+                const localItems = JSON.parse(stored);
+                if (!Array.isArray(localItems) || localItems.length === 0) return;
 
-            // Filtrar solo movimientos reales creados por el usuario (o todos si la nube está vacía)
-            const nonDemoLocal = localList.filter(t => !String(t.id).startsWith('demo_'));
-            if (nonDemoLocal.length === 0) return;
-
-            try {
                 const colRef = collection(db, 'users', uid, 'transactions');
                 const existingSnap = await getDocs(colRef);
-                const existingIds = new Set(existingSnap.docs.map(d => d.id));
-
-                const batch = writeBatch(db);
-                let migratedCount = 0;
-
-                nonDemoLocal.forEach(tx => {
-                    if (!existingIds.has(tx.id)) {
-                        const docRef = doc(db, 'users', uid, 'transactions', String(tx.id));
-                        batch.set(docRef, {
-                            type: tx.type,
-                            amount: Math.round(Number(tx.amount)),
-                            title: tx.title,
-                            category: tx.category,
-                            date: tx.date,
+                if (existingSnap.empty) {
+                    const batch = writeBatch(db);
+                    localItems.forEach((item) => {
+                        const id = String(item.id || Date.now() + Math.random());
+                        batch.set(doc(db, 'users', uid, 'transactions', id), {
+                            type: item.type,
+                            amount: Math.round(Number(item.amount)),
+                            title: item.title,
+                            category: item.category || 'Otros',
+                            date: item.date,
                             updatedAt: Date.now()
                         });
-                        migratedCount++;
-                    }
-                });
-
-                if (migratedCount > 0) {
+                    });
                     await batch.commit();
-                    showToast(`${migratedCount} registro(s) local(es) sincronizados en la nube`);
+                    showToast('Registros locales sincronizados con tu cuenta');
                 }
-                // Limpiar caché local tras migrar para evitar duplicaciones futuras
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
-            } catch (e) {
-                console.error("Error migrando datos locales:", e);
+            } catch (err) {
+                console.error('Error migrando datos locales:', err);
             }
         }
 
@@ -954,7 +940,11 @@
                 updateUI();
             }, (error) => {
                 console.error("Error Firestore onSnapshot:", error);
-                showToast("Error de sincronización con Firestore");
+                if (error.code === 'permission-denied') {
+                    showToast("Permiso denegado en Firestore: revisa las reglas de seguridad");
+                } else {
+                    showToast("Error de sincronización con Firestore");
+                }
             });
         }
 
@@ -1113,6 +1103,7 @@
                 'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
                 'auth/invalid-email': 'El formato del correo electrónico no es válido.',
                 'auth/popup-closed-by-user': 'Ventana de Google cerrada antes de completar.',
+                'auth/operation-not-allowed': 'Activa este método de acceso en Firebase Console > Authentication > Sign-in method.',
                 'auth/unauthorized-domain': 'Agrega este dominio en Firebase Console > Authentication > Settings > Dominios autorizados.'
             };
             return map[code] || `Error de autenticación (${code || 'desconocido'})`;
