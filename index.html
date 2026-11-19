@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NovaFinance | Finanzas Personales & Nube</title>
+    
+    <!-- Meta Tags PWA -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NovaFinance">
+    <meta name="description" content="Gestión minimalista de finanzas personales en pesos chilenos (CLP) con sincronización por sesión en la nube.">
+    
+    <!-- Icono Apple Touch en SVG Data URI -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Cpath d='M144 336V176l112 160V176M368 176v160' stroke='url(%23g)' stroke-width='44' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    },
+                    colors: {
+                        oled: '#000000',
+                        surface: '#09090b',
+                        elevated: '#111113',
+                        borderline: '#27272a'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Tipografía Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons & Chart.js -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #fafafa;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Tarjetas minimalistas de alto contraste negro puro */
+        .oled-card {
+            background-color: #09090b;
+            border: 1px solid #27272a;
+        }
+
+        .oled-card-elevated {
+            background-color: #111113;
+            border: 1px solid #27272a;
+        }
+
+        .balance-hero {
+            background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.14), transparent 55%),
+                        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.10), transparent 55%),
+                        #09090b;
+            border: 1px solid #27272a;
+        }
+
+        /* Ocultar flechas en inputs numéricos */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+    </style>
+</head>
+<body class="bg-oled text-zinc-100 min-h-screen flex flex-col md:flex-row selection:bg-indigo-500/30">
+
+    <!-- BARRA LATERAL (ESCRITORIO / TABLET HORIZONTAL) -->
+    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-zinc-800 bg-oled z-30">
+        <div class="flex items-center gap-3 px-6 h-20 border-b border-zinc-800">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-black font-extrabold shadow-lg shadow-indigo-500/20">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <span class="font-bold text-lg tracking-tight text-white">NovaFinance</span>
+                <span class="block text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">CLP • Cloud PWA</span>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-1.5">
+            <button onclick="switchTab('dashboard')" id="nav-desk-dashboard" class="nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-zinc-900 text-white border border-zinc-800 transition-all">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-400"></i>
+                Balance General
+            </button>
+            <button onclick="switchTab('transactions')" id="nav-desk-transactions" class="nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900/70 transition-all">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                Movimientos
+            </button>
+            <button onclick="switchTab('analytics')" id="nav-desk-analytics" class="nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900/70 transition-all">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                Gráficos y Análisis
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-zinc-800 space-y-2">
+            <button onclick="openNewModal()" class="cursor-pointer w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Nuevo Movimiento
+            </button>
+            <div class="grid grid-cols-2 gap-1.5 pt-1">
+                <button onclick="exportCSV()" class="cursor-pointer py-2 px-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white bg-surface border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-1.5 transition-all">
+                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                    CSV
+                </button>
+                <button onclick="exportJSON()" class="cursor-pointer py-2 px-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white bg-surface border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-1.5 transition-all">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    JSON
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="flex-1 md:pl-64 flex flex-col min-h-screen pb-24 md:pb-10">
+        
+        <!-- CABECERA SUPERIOR -->
+        <header class="sticky top-0 z-20 h-16 md:h-20 px-4 md:px-8 flex items-center justify-between border-b border-zinc-800 bg-black/90 backdrop-blur-xl">
+            <div class="flex items-center gap-2.5 md:hidden">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-black font-bold">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                </div>
+                <span class="font-bold text-base tracking-tight text-white">NovaFinance</span>
+            </div>
+
+            <div class="hidden md:block">
+                <h1 id="page-title" class="text-lg font-bold tracking-tight text-white">Balance General</h1>
+                <p id="current-date-label" class="text-xs text-zinc-400">Pesos Chilenos (CLP)</p>
+            </div>
+
+            <!-- Estado de Sesión, Sincronización e Instalación -->
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <!-- Indicador Estado Sesión / Nube -->
+                <button onclick="openAuthModal()" id="session-pill" class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-zinc-800 hover:border-zinc-700 text-xs transition-all">
+                    <div id="user-avatar" class="w-5 h-5 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-[10px] font-bold uppercase">
+                        <i data-lucide="user" class="w-3 h-3"></i>
+                    </div>
+                    <div class="text-left hidden sm:block max-w-[150px]">
+                        <span id="session-email" class="block font-medium text-zinc-200 truncate leading-tight">Iniciar Sesión</span>
+                        <span id="sync-status-text" class="flex items-center gap-1 text-[10px] text-amber-400 leading-tight">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                            Modo Local
+                        </span>
+                    </div>
+                    <span id="sync-dot-mobile" class="sm:hidden w-2 h-2 rounded-full bg-amber-400"></span>
+                </button>
+
+                <!-- Botón Cerrar Sesión (Visible solo autenticado) -->
+                <button onclick="handleSignOut()" id="logout-btn" title="Cerrar sesión" class="hidden cursor-pointer p-2 rounded-xl bg-surface border border-zinc-800 hover:border-rose-500/50 text-zinc-400 hover:text-rose-400 transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Botón Instalar App PWA -->
+                <button id="install-pwa-btn" onclick="handleInstallClick()" class="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-all active:scale-95">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                    <span>Instalar</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- BANNER INVITACIÓN A SINCRONIZAR (Cuando está en modo local) -->
+        <div id="local-warning-banner" class="max-w-6xl w-full mx-auto px-4 md:px-8 pt-4">
+            <div class="oled-card rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-indigo-500/30">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="cloud-off" class="w-4 h-4"></i>
+                    </div>
+                    <div class="text-xs">
+                        <p class="font-semibold text-zinc-100">Tus datos están guardados solo en este dispositivo</p>
+                        <p class="text-zinc-400">Inicia sesión para respaldar y sincronizar automáticamente en la nube entre teléfono y tablet.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="openFirebaseConfigModal()" class="cursor-pointer px-3 py-1.5 rounded-xl text-xs font-medium bg-elevated border border-zinc-800 text-zinc-300 hover:text-white transition-colors">
+                        Configurar Nube
+                    </button>
+                    <button onclick="openAuthModal()" class="cursor-pointer px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                        Acceder / Crear Cuenta
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÁREA DE VISTAS -->
+        <main class="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 pt-5 space-y-5">
+
+            <!-- SECCIÓN 1: TARJETAS DE BALANCE GENERAL -->
+            <section id="section-summary" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                <!-- Tarjeta Principal: Balance Disponible -->
+                <div class="lg:col-span-6 balance-hero rounded-2xl p-6 flex flex-col justify-between">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                Balance Disponible (CLP)
+                            </span>
+                            <h2 id="total-balance" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mt-2">$0</h2>
+                        </div>
+                        <div id="health-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                            <span>Óptimo</span>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Tasa de Ahorro -->
+                    <div class="mt-6 space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">Tasa de ahorro sobre ingresos</span>
+                            <span id="savings-rate-text" class="font-bold text-white">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-zinc-900 border border-zinc-800 rounded-full overflow-hidden">
+                            <div id="savings-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta: Total Ingresos -->
+                <div class="lg:col-span-3 oled-card rounded-2xl p-6 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Ingresos</span>
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div id="total-income" class="text-2xl font-bold text-emerald-400 tracking-tight">$0</div>
+                        <p id="income-count" class="text-xs text-zinc-400 mt-1">0 ingresos registrados</p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta: Total Gastos -->
+                <div class="lg:col-span-3 oled-card rounded-2xl p-6 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Gastos</span>
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+                            <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div id="total-expense" class="text-2xl font-bold text-rose-400 tracking-tight">$0</div>
+                        <p id="expense-count" class="text-xs text-zinc-400 mt-1">0 gastos registrados</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 2: GRÁFICOS RESPONSIVOS -->
+            <section id="section-charts" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <!-- Gráfico Mensual Ingresos vs Gastos -->
+                <div class="lg:col-span-7 oled-card rounded-2xl p-5 sm:p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-semibold text-sm sm:text-base text-white">Flujo Mensual (Ingresos vs. Gastos)</h3>
+                            <p class="text-xs text-zinc-400">Evolución en pesos chilenos</p>
+                        </div>
+                        <span class="text-[11px] px-2.5 py-1 rounded-lg bg-elevated border border-zinc-800 text-zinc-300 font-medium">CLP</span>
+                    </div>
+                    <div class="relative flex-1 min-h-[230px] w-full">
+                        <canvas id="cashflowChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Dona: Distribución de Gastos -->
+                <div class="lg:col-span-5 oled-card rounded-2xl p-5 sm:p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-semibold text-sm sm:text-base text-white">Gastos por Categoría</h3>
+                            <p class="text-xs text-zinc-400">Distribución porcentual</p>
+                        </div>
+                    </div>
+                    <div class="relative flex-1 min-h-[230px] w-full flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
+                        <div id="empty-chart-msg" class="hidden text-center text-xs text-zinc-500">
+                            Sin gastos registrados para graficar
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 3: LISTADO INTERACTIVO DE MOVIMIENTOS -->
+            <section id="section-transactions" class="oled-card rounded-2xl p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="font-semibold text-base text-white">Historial de Movimientos</h3>
+                        <p class="text-xs text-zinc-400">Filtra, edita o administra tus registros</p>
+                    </div>
+
+                    <!-- Búsqueda y Filtros -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative flex-1 sm:flex-initial">
+                            <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                            <input type="text" id="search-input" oninput="renderTransactions()" placeholder="Buscar descripción o categoría..." class="w-full sm:w-52 pl-9 pr-3 py-1.5 text-xs rounded-xl bg-oled border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="flex p-1 rounded-xl bg-oled border border-zinc-800 text-xs">
+                            <button onclick="setFilter('all')" id="filter-all" class="filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-semibold bg-elevated text-white border border-zinc-700 transition-all">Todos</button>
+                            <button onclick="setFilter('income')" id="filter-income" class="filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-medium text-zinc-400 hover:text-white transition-all">Ingresos</button>
+                            <button onclick="setFilter('expense')" id="filter-expense" class="filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-medium text-zinc-400 hover:text-white transition-all">Gastos</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Tarjetas / Filas -->
+                <div id="transactions-list" class="divide-y divide-zinc-800/80">
+                    <!-- Renderizado dinámico JS -->
+                </div>
+
+                <!-- Pie de Herramientas y Respaldo -->
+                <div class="mt-6 pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
+                    <span id="showing-count">Mostrando 0 movimientos</span>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label class="cursor-pointer hover:text-indigo-400 transition-colors flex items-center gap-1">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            <span>Restaurar JSON</span>
+                            <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
+                        </label>
+                        <button onclick="loadDemoData()" class="cursor-pointer hover:text-indigo-400 transition-colors flex items-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            Cargar ejemplos
+                        </button>
+                        <button onclick="confirmClearAll()" class="cursor-pointer hover:text-rose-400 transition-colors flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            Limpiar todo
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- NAVEGACIÓN INFERIOR MÓVIL -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-black/95 backdrop-blur-xl border-t border-zinc-800 px-2 py-2 flex items-center justify-around">
+        <button onclick="switchTab('dashboard')" id="nav-mob-dashboard" class="nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-indigo-400">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-[10px] font-semibold">Balance</span>
+        </button>
+        <button onclick="switchTab('transactions')" id="nav-mob-transactions" class="nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500">
+            <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Movimientos</span>
+        </button>
+        
+        <!-- Botón Central Rápido -->
+        <button onclick="openNewModal()" aria-label="Nuevo movimiento" class="cursor-pointer w-12 h-12 -mt-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 active:scale-90 transition-transform">
+            <i data-lucide="plus" class="w-6 h-6"></i>
+        </button>
+
+        <button onclick="switchTab('analytics')" id="nav-mob-analytics" class="nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500">
+            <i data-lucide="pie-chart" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Gráficos</span>
+        </button>
+        <button onclick="openAuthModal()" class="cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500">
+            <i data-lucide="cloud" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium">Sesión</span>
+        </button>
+    </nav>
+
+    <!-- ========================================== -->
+    <!-- MODAL 1: FORMULARIO INGRESO / GASTO        -->
+    <!-- ========================================== -->
+    <div id="transaction-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
+            <div class="flex items-center justify-between mb-5">
+                <h3 id="modal-title" class="text-lg font-bold text-white">Nuevo Movimiento</h3>
+                <button onclick="closeNewModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="transaction-form" onsubmit="saveTransaction(event)" class="space-y-4">
+                <input type="hidden" id="edit-id">
+
+                <!-- Selector Ingreso / Gasto -->
+                <div class="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-oled border border-zinc-800">
+                    <button type="button" id="type-btn-expense" onclick="setTransactionType('expense')" class="cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-rose-600 text-white transition-all">
+                        <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+                        Gasto
+                    </button>
+                    <button type="button" id="type-btn-income" onclick="setTransactionType('income')" class="cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-all">
+                        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                        Ingreso
+                    </button>
+                </div>
+
+                <!-- Monto Entero en Pesos Chilenos -->
+                <div>
+                    <label class="block text-xs font-medium text-zinc-400 mb-1">Monto en Pesos Chilenos (CLP)</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-zinc-500">$</span>
+                        <input type="number" id="tx-amount" inputmode="numeric" step="1" min="1" required placeholder="0" class="w-full pl-10 pr-4 py-3 text-2xl font-extrabold rounded-2xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div>
+                    <label class="block text-xs font-medium text-zinc-400 mb-1">Descripción</label>
+                    <input type="text" id="tx-title" required placeholder="Ej. Sueldo mensual, Supermercado, Arriendo..." class="w-full px-4 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <!-- Categoría y Fecha -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1">Categoría</label>
+                        <select id="tx-category" class="cursor-pointer w-full px-3 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                            <option value="Sueldo">Sueldo</option>
+                            <option value="Ventas/Proyectos">Ventas / Proyectos</option>
+                            <option value="Inversiones">Inversiones</option>
+                            <option value="Arriendo/Dividendo">Arriendo / Dividendo</option>
+                            <option value="Supermercado">Supermercado</option>
+                            <option value="Cuentas/Servicios">Cuentas / Servicios</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Salud">Salud</option>
+                            <option value="Ocio">Ocio</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1">Fecha</label>
+                        <input type="date" id="tx-date" required class="cursor-pointer w-full px-3 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeNewModal()" class="cursor-pointer flex-1 py-3 rounded-xl text-sm font-medium bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-colors">Cancelar</button>
+                    <button type="submit" class="cursor-pointer flex-1 py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 2: ACCESO POR SESIÓN (FIREBASE AUTH) -->
+    <!-- ========================================== -->
+    <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
+                        <i data-lucide="shield" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white">Cuenta y Sincronización</h3>
+                        <p id="auth-cloud-subtitle" class="text-xs text-zinc-400">Respalda tus finanzas en la nube</p>
+                    </div>
+                </div>
+                <button onclick="closeAuthModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Vista cuando YA hay sesión iniciada -->
+            <div id="auth-logged-in-view" class="hidden space-y-4">
+                <div class="p-4 rounded-2xl bg-oled border border-zinc-800 flex items-center gap-3">
+                    <div id="profile-big-avatar" class="w-11 h-11 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base">
+                        U
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p id="profile-email-display" class="text-sm font-semibold text-white truncate">usuario@correo.cl</p>
+                        <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Sincronización en tiempo real activa
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openFirebaseConfigModal()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-medium bg-oled border border-zinc-800 text-zinc-300 hover:text-white">
+                        Configurar Firebase
+                    </button>
+                    <button onclick="handleSignOut()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista de Inicio de Sesión / Registro -->
+            <div id="auth-form-view" class="space-y-4">
+                <!-- Alerta si falta configuración de Firebase -->
+                <div id="firebase-missing-notice" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-2">
+                    <p class="font-semibold flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+                        Proyecto Firebase requerido para nube
+                    </p>
+                    <p class="text-amber-200/80">Pega las credenciales de tu proyecto Firebase Console para activar el inicio de sesión y respaldo multi-dispositivo.</p>
+                    <button type="button" onclick="openFirebaseConfigModal()" class="cursor-pointer w-full py-2 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors">
+                        Configurar Firebase Ahora
+                    </button>
+                </div>
+
+                <!-- Botón Google -->
+                <button type="button" onclick="handleGoogleSignIn()" id="google-signin-btn" class="cursor-pointer w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm flex items-center justify-center gap-2.5 transition-all">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"/>
+                        <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"/>
+                    </svg>
+                    Continuar con Google
+                </button>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-zinc-800"></div>
+                    <span class="flex-shrink mx-3 text-[11px] uppercase text-zinc-500">o con tu correo</span>
+                    <div class="flex-grow border-t border-zinc-800"></div>
+                </div>
+
+                <!-- Tabs Login / Registro -->
+                <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-oled border border-zinc-800 text-xs">
+                    <button type="button" id="auth-tab-login" onclick="setAuthMode('login')" class="cursor-pointer py-1.5 rounded-lg font-semibold bg-elevated text-white border border-zinc-700">Iniciar Sesión</button>
+                    <button type="button" id="auth-tab-register" onclick="setAuthMode('register')" class="cursor-pointer py-1.5 rounded-lg font-medium text-zinc-400 hover:text-white">Crear Cuenta</button>
+                </div>
+
+                <form onsubmit="handleEmailAuth(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">Correo electrónico</label>
+                        <input type="email" id="auth-email" required placeholder="tu@correo.cl" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">Contraseña (mínimo 6 caracteres)</label>
+                        <input type="password" id="auth-password" minlength="6" required placeholder="••••••••" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <p id="auth-error-msg" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl"></p>
+                    <button type="submit" id="auth-submit-btn" class="cursor-pointer w-full py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all">
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                <div class="pt-2 border-t border-zinc-800 flex items-center justify-between text-xs">
+                    <button type="button" onclick="openFirebaseConfigModal()" class="cursor-pointer text-zinc-400 hover:text-indigo-400 flex items-center gap-1">
+                        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                        Configurar Firebase
+                    </button>
+                    <button type="button" onclick="closeAuthModal()" class="cursor-pointer text-zinc-400 hover:text-white">
+                        Seguir en Modo Local
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 3: CONFIGURADOR CREDENCIALES FIREBASE -->
+    <!-- ========================================== -->
+    <div id="firebase-config-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-base text-white">Configurar Firebase Cloud</h3>
+                <button onclick="closeFirebaseConfigModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-zinc-400 mb-3">
+                Pega el objeto <code class="text-indigo-400">firebaseConfig</code> (JSON o código JS desde Firebase Console &gt; Configuración del proyecto) para habilitar Authentication y Firestore.
+            </p>
+            <textarea id="firebase-config-input" rows="7" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "tu-proyecto.firebaseapp.com",
+  "projectId": "tu-proyecto",
+  "storageBucket": "tu-proyecto.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abcdef"
+}' class="w-full p-3 text-xs font-mono rounded-2xl bg-oled border border-zinc-800 text-zinc-200 focus:outline-none focus:border-indigo-500"></textarea>
+            <p id="config-error-msg" class="hidden text-xs text-rose-400 mt-2"></p>
+            <div class="mt-4 flex gap-2">
+                <button type="button" onclick="clearFirebaseConfig()" class="cursor-pointer py-2.5 px-3 rounded-xl text-xs font-medium bg-oled border border-zinc-800 text-rose-400 hover:bg-rose-500/10">
+                    Borrar Config
+                </button>
+                <button type="button" onclick="saveFirebaseConfig()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">
+                    Guardar y Conectar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 4: INSTALACIÓN NATIVA PWA            -->
+    <!-- ========================================== -->
+    <div id="install-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-black">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white">Instalar NovaFinance</h3>
+                        <p class="text-xs text-zinc-400">App nativa a pantalla completa</p>
+                    </div>
+                </div>
+                <button onclick="closeInstallModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-zinc-300">
+                <div class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
+                    <p class="font-semibold text-white">iPhone / iPad (Safari iOS):</p>
+                    <ol class="list-decimal list-inside space-y-1 text-zinc-400">
+                        <li>Toca el icono <strong>Compartir</strong> en la barra inferior de Safari.</li>
+                        <li>Selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
+                        <li>Toca <strong>"Añadir"</strong> en la esquina superior derecha.</li>
+                    </ol>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
+                    <p class="font-semibold text-white">Android / Tablet / PC (Chrome / Edge):</p>
+                    <ol class="list-decimal list-inside space-y-1 text-zinc-400">
+                        <li>Abre el menú del navegador (<strong>⋮</strong>) o el icono de instalación en la barra superior.</li>
+                        <li>Selecciona <strong>"Instalar aplicación"</strong>.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <button onclick="closeInstallModal()" class="cursor-pointer mt-5 w-full py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-zinc-200">Entendido</button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 5: CONFIRMACIÓN LIMPIAR DATOS        -->
+    <!-- ========================================== -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+        <div class="oled-card-elevated rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-slide-up text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-bold text-base text-white">¿Eliminar todos los registros?</h3>
+            <p class="text-xs text-zinc-400 mt-1">Se borrarán todos los movimientos de tu cuenta actual o dispositivo.</p>
+            <div class="mt-5 flex gap-2">
+                <button onclick="closeConfirmModal()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-medium bg-oled border border-zinc-800 text-zinc-300">Cancelar</button>
+                <button onclick="executeClearAll()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 text-white">Sí, eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIÓN TOAST -->
+    <div id="toast" class="fixed bottom-20 md:bottom-6 right-4 md:right-8 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 bg-white text-black px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+        <span id="toast-msg">Operación realizada</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LÓGICA DE APLICACIÓN + FIREBASE ES MODULES -->
+    <!-- ========================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            setDoc,
+            deleteDoc,
+            onSnapshot,
+            writeBatch,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+        // ==========================================
+        // 1. CONFIGURACIÓN DINÁMICA PWA (MANIFEST + SW)
+        // ==========================================
+        (function setupPWA() {
+            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#10b981"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#000000"/><path d="M144 336V176l112 160V176M368 176v160" stroke="url(#g)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
+            const iconUrl = 'data:image/svg+xml;base64,' + btoa(svgIcon);
+
+            const manifest = {
+                name: "NovaFinance - Finanzas Personales CLP",
+                short_name: "NovaFinance",
+                description: "Gestión minimalista de ingresos, gastos y balance general en pesos chilenos.",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#000000",
+                theme_color: "#000000",
+                orientation: "portrait-primary",
+                icons: [
+                    { src: iconUrl, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+                    { src: iconUrl, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+                ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = URL.createObjectURL(manifestBlob);
+            document.head.appendChild(link);
+
+            if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                const swCode = `
+                    self.addEventListener('install', () => self.skipWaiting());
+                    self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(fetch(e.request).catch(() => new Response('Modo Offline')));
+                    });
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+            }
+        })();
+
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        window.handleInstallClick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') showToast('Instalando NovaFinance...');
+                deferredPrompt = null;
+            } else {
+                document.getElementById('install-modal').classList.remove('hidden');
+                document.getElementById('install-modal').classList.add('flex');
+            }
+        };
+
+        window.closeInstallModal = () => {
+            document.getElementById('install-modal').classList.add('hidden');
+            document.getElementById('install-modal').classList.remove('flex');
+        };
+
+        // ==========================================
+        // 2. ESTADO GLOBAL Y FORMATO PESOS CHILENOS
+        // ==========================================
+        const LOCAL_STORAGE_KEY = 'novafinance_clp_oled_v1';
+        const FB_CONFIG_KEY = 'novafinance_firebase_config_v1';
+
+        let transactions = [];
+        let currentFilter = 'all';
+        let currentTxType = 'expense';
+        let authMode = 'login';
+        let cashflowChartInstance = null;
+        let categoryChartInstance = null;
+
+        // Estado Firebase
+        let firebaseApp = null;
+        let auth = null;
+        let db = null;
+        let currentUser = null;
+        let unsubscribeSnapshot = null;
+
+        const clpFormatter = new Intl.NumberFormat('es-CL', {
+            style: 'currency',
+            currency: 'CLP',
+            maximumFractionDigits: 0
+        });
+
+        function formatCLP(amount) {
+            return clpFormatter.format(Math.round(Number(amount) || 0));
+        }
+
+        const categoryMeta = {
+            'Sueldo': { icon: 'briefcase', color: '#10b981' },
+            'Ventas/Proyectos': { icon: 'laptop', color: '#14b8a6' },
+            'Inversiones': { icon: 'trending-up', color: '#22c55e' },
+            'Arriendo/Dividendo': { icon: 'home', color: '#6366f1' },
+            'Supermercado': { icon: 'shopping-cart', color: '#f59e0b' },
+            'Cuentas/Servicios': { icon: 'zap', color: '#3b82f6' },
+            'Transporte': { icon: 'car', color: '#06b6d4' },
+            'Salud': { icon: 'heart-pulse', color: '#ef4444' },
+            'Ocio': { icon: 'film', color: '#ec4899' },
+            'Otros': { icon: 'package', color: '#71717a' }
+        };
+
+        function getDemoTransactions() {
+            const today = new Date();
+            const fmt = (daysAgo) => {
+                const d = new Date(today);
+                d.setDate(d.getDate() - daysAgo);
+                return d.toISOString().split('T')[0];
+            };
+            return [
+                { id: 'demo_1', type: 'income', amount: 1850000, title: 'Sueldo Líquido Mensual', category: 'Sueldo', date: fmt(2) },
+                { id: 'demo_2', type: 'expense', amount: 520000, title: 'Arriendo Departamento', category: 'Arriendo/Dividendo', date: fmt(3) },
+                { id: 'demo_3', type: 'expense', amount: 145000, title: 'Compra Supermercado', category: 'Supermercado', date: fmt(5) },
+                { id: 'demo_4', type: 'income', amount: 350000, title: 'Proyecto Freelance', category: 'Ventas/Proyectos', date: fmt(7) },
+                { id: 'demo_5', type: 'expense', amount: 68500, title: 'Luz, Agua e Internet', category: 'Cuentas/Servicios', date: fmt(9) },
+                { id: 'demo_6', type: 'expense', amount: 48000, title: 'Bencina y Tag', category: 'Transporte', date: fmt(12) }
+            ];
+        }
+
+        // ==========================================
+        // 3. INICIALIZACIÓN FIREBASE Y SINCRONIZACIÓN
+        // ==========================================
+        function getResolvedFirebaseConfig() {
+            if (window.__firebase_config) {
+                return typeof window.__firebase_config === 'string'
+                    ? JSON.parse(window.__firebase_config)
+                    : window.__firebase_config;
+            }
+            const saved = localStorage.getItem(FB_CONFIG_KEY);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        function initFirebase() {
+            const config = getResolvedFirebaseConfig();
+            const missingNotice = document.getElementById('firebase-missing-notice');
+            const configTextarea = document.getElementById('firebase-config-input');
+
+            if (config && config.apiKey && config.projectId) {
+                if (configTextarea) configTextarea.value = JSON.stringify(config, null, 2);
+                if (missingNotice) missingNotice.classList.add('hidden');
+
+                try {
+                    firebaseApp = initializeApp(config);
+                    auth = getAuth(firebaseApp);
+                    db = getFirestore(firebaseApp);
+
+                    // Manejar retorno de Google Redirect en móviles/PWA
+                    getRedirectResult(auth).catch(() => {});
+
+                    onAuthStateChanged(auth, async (user) => {
+                        currentUser = user;
+                        updateAuthUI();
+
+                        if (unsubscribeSnapshot) {
+                            unsubscribeSnapshot();
+                            unsubscribeSnapshot = null;
+                        }
+
+                        if (user) {
+                            await migrateLocalDataToCloudIfNeeded(user.uid);
+                            subscribeToUserTransactions(user.uid);
+                            closeAuthModal();
+                        } else {
+                            loadLocalTransactions();
+                            updateUI();
+                        }
+                    });
+                } catch (err) {
+                    console.error("Error inicializando Firebase:", err);
+                    showToast("Error en configuración Firebase");
+                }
+            } else {
+                if (missingNotice) missingNotice.classList.remove('hidden');
+                loadLocalTransactions();
+                updateUI();
+            }
+        }
+
+        // Migra automáticamente registros locales no sincronizados al iniciar sesión
+        async function migrateLocalDataToCloudIfNeeded(uid) {
+            const rawLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (!rawLocal) return;
+
+            let localList = [];
+            try {
+                localList = JSON.parse(rawLocal);
+            } catch {
+                return;
+            }
+
+            // Filtrar solo movimientos reales creados por el usuario (o todos si la nube está vacía)
+            const nonDemoLocal = localList.filter(t => !String(t.id).startsWith('demo_'));
+            if (nonDemoLocal.length === 0) return;
+
+            try {
+                const colRef = collection(db, 'users', uid, 'transactions');
+                const existingSnap = await getDocs(colRef);
+                const existingIds = new Set(existingSnap.docs.map(d => d.id));
+
+                const batch = writeBatch(db);
+                let migratedCount = 0;
+
+                nonDemoLocal.forEach(tx => {
+                    if (!existingIds.has(tx.id)) {
+                        const docRef = doc(db, 'users', uid, 'transactions', String(tx.id));
+                        batch.set(docRef, {
+                            type: tx.type,
+                            amount: Math.round(Number(tx.amount)),
+                            title: tx.title,
+                            category: tx.category,
+                            date: tx.date,
+                            updatedAt: Date.now()
+                        });
+                        migratedCount++;
+                    }
+                });
+
+                if (migratedCount > 0) {
+                    await batch.commit();
+                    showToast(`${migratedCount} registro(s) local(es) sincronizados en la nube`);
+                }
+                // Limpiar caché local tras migrar para evitar duplicaciones futuras
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+            } catch (e) {
+                console.error("Error migrando datos locales:", e);
+            }
+        }
+
+        // Escucha en tiempo real Firestore: users/{uid}/transactions
+        function subscribeToUserTransactions(uid) {
+            const colRef = collection(db, 'users', uid, 'transactions');
+            unsubscribeSnapshot = onSnapshot(colRef, (snapshot) => {
+                transactions = snapshot.docs.map(docSnap => ({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                }));
+                updateUI();
+            }, (error) => {
+                console.error("Error Firestore onSnapshot:", error);
+                showToast("Error de sincronización con Firestore");
+            });
+        }
+
+        function loadLocalTransactions() {
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (stored) {
+                try {
+                    transactions = JSON.parse(stored);
+                } catch {
+                    transactions = getDemoTransactions();
+                }
+            } else {
+                transactions = getDemoTransactions();
+                saveLocalTransactions();
+            }
+        }
+
+        function saveLocalTransactions() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(transactions));
+        }
+
+        function updateAuthUI() {
+            const avatarEl = document.getElementById('user-avatar');
+            const emailEl = document.getElementById('session-email');
+            const statusTextEl = document.getElementById('sync-status-text');
+            const dotMobEl = document.getElementById('sync-dot-mobile');
+            const logoutBtn = document.getElementById('logout-btn');
+            const banner = document.getElementById('local-warning-banner');
+            const loggedInView = document.getElementById('auth-logged-in-view');
+            const formView = document.getElementById('auth-form-view');
+
+            if (currentUser) {
+                const email = currentUser.email || 'Usuario Conectado';
+                const initial = email.charAt(0).toUpperCase();
+
+                avatarEl.textContent = initial;
+                avatarEl.className = 'w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase';
+                emailEl.textContent = email;
+                statusTextEl.className = 'flex items-center gap-1 text-[10px] text-emerald-400 leading-tight';
+                statusTextEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Sincronizado en la nube`;
+                dotMobEl.className = 'sm:hidden w-2 h-2 rounded-full bg-emerald-400';
+
+                logoutBtn.classList.remove('hidden');
+                banner.classList.add('hidden');
+                loggedInView.classList.remove('hidden');
+                formView.classList.add('hidden');
+
+                document.getElementById('profile-big-avatar').textContent = initial;
+                document.getElementById('profile-email-display').textContent = email;
+            } else {
+                avatarEl.innerHTML = `<i data-lucide="user" class="w-3 h-3"></i>`;
+                avatarEl.className = 'w-6 h-6 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-[10px] font-bold';
+                emailEl.textContent = 'Iniciar Sesión';
+                statusTextEl.className = 'flex items-center gap-1 text-[10px] text-amber-400 leading-tight';
+                statusTextEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Modo Local`;
+                dotMobEl.className = 'sm:hidden w-2 h-2 rounded-full bg-amber-400';
+
+                logoutBtn.classList.add('hidden');
+                banner.classList.remove('hidden');
+                loggedInView.classList.add('hidden');
+                formView.classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // 4. ACCIONES DE AUTENTICACIÓN Y CONFIG
+        // ==========================================
+        window.openAuthModal = () => {
+            document.getElementById('auth-error-msg').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('auth-modal').classList.add('flex');
+        };
+
+        window.closeAuthModal = () => {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('flex');
+        };
+
+        window.setAuthMode = (mode) => {
+            authMode = mode;
+            const tabLogin = document.getElementById('auth-tab-login');
+            const tabReg = document.getElementById('auth-tab-register');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            if (mode === 'login') {
+                tabLogin.className = 'cursor-pointer py-1.5 rounded-lg font-semibold bg-elevated text-white border border-zinc-700';
+                tabReg.className = 'cursor-pointer py-1.5 rounded-lg font-medium text-zinc-400 hover:text-white';
+                submitBtn.textContent = 'Iniciar Sesión';
+            } else {
+                tabReg.className = 'cursor-pointer py-1.5 rounded-lg font-semibold bg-elevated text-white border border-zinc-700';
+                tabLogin.className = 'cursor-pointer py-1.5 rounded-lg font-medium text-zinc-400 hover:text-white';
+                submitBtn.textContent = 'Crear Cuenta y Sincronizar';
+            }
+        };
+
+        window.handleEmailAuth = async (e) => {
+            e.preventDefault();
+            if (!auth) {
+                openFirebaseConfigModal();
+                return;
+            }
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const errEl = document.getElementById('auth-error-msg');
+            errEl.classList.add('hidden');
+
+            try {
+                if (authMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showToast('Sesión iniciada correctamente');
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showToast('Cuenta creada y sincronizada');
+                }
+            } catch (err) {
+                errEl.textContent = translateFirebaseError(err.code);
+                errEl.classList.remove('hidden');
+            }
+        };
+
+        window.handleGoogleSignIn = async () => {
+            if (!auth) {
+                openFirebaseConfigModal();
+                return;
+            }
+            const provider = new GoogleAuthProvider();
+            const errEl = document.getElementById('auth-error-msg');
+            errEl.classList.add('hidden');
+
+            try {
+                await signInWithPopup(auth, provider);
+                showToast('Conectado con Google');
+            } catch (err) {
+                if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
+                    await signInWithRedirect(auth, provider);
+                } else {
+                    errEl.textContent = translateFirebaseError(err.code);
+                    errEl.classList.remove('hidden');
+                }
+            }
+        };
+
+        window.handleSignOut = async () => {
+            if (!auth) return;
+            await signOut(auth);
+            showToast('Sesión cerrada');
+        };
+
+        function translateFirebaseError(code) {
+            const map = {
+                'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+                'auth/user-not-found': 'No existe una cuenta con este correo.',
+                'auth/wrong-password': 'Contraseña incorrecta.',
+                'auth/email-already-in-use': 'Este correo ya está registrado. Inicia sesión.',
+                'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+                'auth/invalid-email': 'El formato del correo electrónico no es válido.',
+                'auth/popup-closed-by-user': 'Ventana de Google cerrada antes de completar.',
+                'auth/unauthorized-domain': 'Agrega este dominio en Firebase Console > Authentication > Settings > Dominios autorizados.'
+            };
+            return map[code] || `Error de autenticación (${code || 'desconocido'})`;
+        }
+
+        // Configurador Visual de Firebase
+        window.openFirebaseConfigModal = () => {
+            closeAuthModal();
+            document.getElementById('config-error-msg').classList.add('hidden');
+            document.getElementById('firebase-config-modal').classList.remove('hidden');
+            document.getElementById('firebase-config-modal').classList.add('flex');
+        };
+
+        window.closeFirebaseConfigModal = () => {
+            document.getElementById('firebase-config-modal').classList.add('hidden');
+            document.getElementById('firebase-config-modal').classList.remove('flex');
+        };
+
+        window.saveFirebaseConfig = () => {
+            const raw = document.getElementById('firebase-config-input').value.trim();
+            const errEl = document.getElementById('config-error-msg');
+            errEl.classList.add('hidden');
+
+            try {
+                // Extraer objeto incluso si el usuario pega "const firebaseConfig = { ... };"
+                const firstBrace = raw.indexOf('{');
+                const lastBrace = raw.lastIndexOf('}');
+                if (firstBrace === -1 || lastBrace === -1) throw new Error('Formato inválido');
+
+                let jsonCandidate = raw.slice(firstBrace, lastBrace + 1);
+                // Convertir claves JS sin comillas a JSON válido si es necesario
+                jsonCandidate = jsonCandidate.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":');
+                const parsed = JSON.parse(jsonCandidate);
+
+                if (!parsed.apiKey || !parsed.projectId) {
+                    throw new Error('Faltan campos apiKey o projectId');
+                }
+
+                localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(parsed));
+                closeFirebaseConfigModal();
+                showToast('Configuración guardada. Recargando...');
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {
+                errEl.textContent = 'No se pudo leer la configuración. Asegúrate de pegar el objeto { apiKey, authDomain, projectId... }.';
+                errEl.classList.remove('hidden');
+            }
+        };
+
+        window.clearFirebaseConfig = () => {
+            localStorage.removeItem(FB_CONFIG_KEY);
+            showToast('Configuración eliminada');
+            setTimeout(() => window.location.reload(), 500);
+        };
+
+        // ==========================================
+        // 5. CRUD MOVIMIENTOS (CLOUD FIRESTORE / LOCAL)
+        // ==========================================
+        window.openNewModal = () => {
+            document.getElementById('transaction-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('modal-title').textContent = 'Nuevo Movimiento';
+            document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
+            setTransactionType('expense');
+
+            const modal = document.getElementById('transaction-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeNewModal = () => {
+            document.getElementById('transaction-modal').classList.add('hidden');
+            document.getElementById('transaction-modal').classList.remove('flex');
+        };
+
+        window.setTransactionType = (type) => {
+            currentTxType = type;
+            const btnExp = document.getElementById('type-btn-expense');
+            const btnInc = document.getElementById('type-btn-income');
+
+            if (type === 'expense') {
+                btnExp.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-rose-600 text-white transition-all';
+                btnInc.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-all';
+            } else {
+                btnInc.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-emerald-600 text-white transition-all';
+                btnExp.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-all';
+            }
+        };
+
+        window.saveTransaction = async (e) => {
+            e.preventDefault();
+            const existingId = document.getElementById('edit-id').value;
+            const amount = Math.round(parseFloat(document.getElementById('tx-amount').value));
+            const title = document.getElementById('tx-title').value.trim();
+            const category = document.getElementById('tx-category').value;
+            const date = document.getElementById('tx-date').value;
+
+            if (!amount || amount <= 0 || !title || !date) return;
+
+            const txId = existingId || Date.now().toString();
+            const txData = {
+                type: currentTxType,
+                amount,
+                title,
+                category,
+                date,
+                updatedAt: Date.now()
+            };
+
+            if (currentUser && db) {
+                try {
+                    await setDoc(doc(db, 'users', currentUser.uid, 'transactions', txId), txData);
+                    showToast(existingId ? 'Actualizado en la nube' : 'Guardado en la nube');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error al guardar en Firestore');
+                }
+            } else {
+                if (existingId) {
+                    const idx = transactions.findIndex(t => t.id === existingId);
+                    if (idx !== -1) transactions[idx] = { id: existingId, ...txData };
+                    showToast('Movimiento actualizado');
+                } else {
+                    transactions.unshift({ id: txId, ...txData });
+                    showToast(currentTxType === 'income' ? 'Ingreso registrado' : 'Gasto registrado');
+                }
+                saveLocalTransactions();
+                updateUI();
+            }
+
+            closeNewModal();
+        };
+
+        window.editTransaction = (id) => {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            openNewModal();
+            document.getElementById('modal-title').textContent = 'Editar Movimiento';
+            document.getElementById('edit-id').value = tx.id;
+            document.getElementById('tx-amount').value = Math.round(tx.amount);
+            document.getElementById('tx-title').value = tx.title;
+            document.getElementById('tx-category').value = tx.category;
+            document.getElementById('tx-date').value = tx.date;
+            setTransactionType(tx.type);
+        };
+
+        window.deleteTransaction = async (id) => {
+            if (currentUser && db) {
+                try {
+                    await deleteDoc(doc(db, 'users', currentUser.uid, 'transactions', id));
+                    showToast('Eliminado de la nube');
+                } catch (err) {
+                    showToast('Error al eliminar');
+                }
+            } else {
+                transactions = transactions.filter(t => t.id !== id);
+                saveLocalTransactions();
+                updateUI();
+                showToast('Registro eliminado');
+            }
+        };
+
+        // ==========================================
+        // 6. ACTUALIZACIÓN UI, GRÁFICOS Y FILTROS
+        // ==========================================
+        function updateUI() {
+            const totalIncome = transactions
+                .filter(t => t.type === 'income')
+                .reduce((acc, t) => acc + Math.round(Number(t.amount)), 0);
+
+            const totalExpense = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((acc, t) => acc + Math.round(Number(t.amount)), 0);
+
+            const balance = totalIncome - totalExpense;
+
+            document.getElementById('total-balance').textContent = formatCLP(balance);
+            document.getElementById('total-income').textContent = formatCLP(totalIncome);
+            document.getElementById('total-expense').textContent = formatCLP(totalExpense);
+
+            const incCount = transactions.filter(t => t.type === 'income').length;
+            const expCount = transactions.filter(t => t.type === 'expense').length;
+            document.getElementById('income-count').textContent = `${incCount} ingreso${incCount !== 1 ? 's' : ''} registrado${incCount !== 1 ? 's' : ''}`;
+            document.getElementById('expense-count').textContent = `${expCount} gasto${expCount !== 1 ? 's' : ''} registrado${expCount !== 1 ? 's' : ''}`;
+
+            // Tasa de ahorro y estado financiero
+            const badge = document.getElementById('health-badge');
+            const progressBar = document.getElementById('savings-progress-bar');
+            const rateText = document.getElementById('savings-rate-text');
+
+            let savingsRate = 0;
+            if (totalIncome > 0) {
+                savingsRate = Math.max(0, Math.min(100, Math.round(((totalIncome - totalExpense) / totalIncome) * 100)));
+            }
+
+            rateText.textContent = `${savingsRate}%`;
+            progressBar.style.width = `${savingsRate}%`;
+
+            if (balance < 0) {
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shrink-0';
+                badge.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i><span>Déficit</span>`;
+            } else if (savingsRate >= 20) {
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shrink-0';
+                badge.innerHTML = `<i data-lucide="shield-check" class="w-3.5 h-3.5"></i><span>Óptimo</span>`;
+            } else {
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shrink-0';
+                badge.innerHTML = `<i data-lucide="activity" class="w-3.5 h-3.5"></i><span>Equilibrado</span>`;
+            }
+
+            renderTransactions();
+            renderCharts();
+            lucide.createIcons();
+        }
+
+        window.setFilter = (filter) => {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.className = 'filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-medium text-zinc-400 hover:text-white transition-all';
+            });
+            const active = document.getElementById(`filter-${filter}`);
+            active.className = 'filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-semibold bg-elevated text-white border border-zinc-700 transition-all';
+            renderTransactions();
+        };
+
+        window.renderTransactions = () => {
+            const listEl = document.getElementById('transactions-list');
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+            const filtered = transactions
+                .filter(t => currentFilter === 'all' || t.type === currentFilter)
+                .filter(t => t.title.toLowerCase().includes(query) || t.category.toLowerCase().includes(query))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            document.getElementById('showing-count').textContent = `Mostrando ${filtered.length} movimiento${filtered.length !== 1 ? 's' : ''}`;
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="py-12 text-center space-y-2">
+                        <div class="w-12 h-12 rounded-2xl bg-elevated border border-zinc-800 text-zinc-500 flex items-center justify-center mx-auto">
+                            <i data-lucide="inbox" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-zinc-300">No hay movimientos registrados</p>
+                        <p class="text-xs text-zinc-500">Pulsa "Nuevo Movimiento" para añadir un ingreso o gasto.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(tx => {
+                const isIncome = tx.type === 'income';
+                const meta = categoryMeta[tx.category] || { icon: 'circle-dot', color: '#6366f1' };
+                const formattedDate = new Date(tx.date + 'T00:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                return `
+                    <div class="py-3.5 flex items-center justify-between gap-3 group hover:bg-zinc-900/50 -mx-2 px-2 rounded-xl transition-colors">
+                        <div class="flex items-center gap-3.5 min-w-0">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-zinc-800" style="background-color: ${meta.color}18; color: ${meta.color}">
+                                <i data-lucide="${meta.icon}" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold truncate text-white">${escapeHTML(tx.title)}</p>
+                                <div class="flex items-center gap-2 text-xs text-zinc-400">
+                                    <span>${escapeHTML(tx.category)}</span>
+                                    <span>•</span>
+                                    <span>${formattedDate}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="text-sm sm:text-base font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+                                ${isIncome ? '+' : '-'}${formatCLP(tx.amount)}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button onclick="editTransaction('${tx.id}')" title="Editar" class="cursor-pointer p-1.5 rounded-lg text-zinc-400 hover:text-indigo-400 hover:bg-zinc-800">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="deleteTransaction('${tx.id}')" title="Eliminar" class="cursor-pointer p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        };
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderCharts() {
+            const textColor = '#a1a1aa';
+            const gridColor = '#18181b';
+
+            // 1. Flujo Mensual
+            const monthlyData = {};
+            transactions.forEach(tx => {
+                const monthKey = tx.date.substring(0, 7);
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0 };
+                monthlyData[monthKey][tx.type] += Math.round(Number(tx.amount));
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+            const labels = sortedMonths.map(m => {
+                const [y, mo] = m.split('-');
+                return new Date(y, parseInt(mo) - 1, 1).toLocaleDateString('es-CL', { month: 'short', year: '2-digit' });
+            });
+
+            const incomeSeries = sortedMonths.map(m => monthlyData[m].income);
+            const expenseSeries = sortedMonths.map(m => monthlyData[m].expense);
+
+            const ctxBar = document.getElementById('cashflowChart').getContext('2d');
+            if (cashflowChartInstance) cashflowChartInstance.destroy();
+
+            cashflowChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['Actual'],
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: incomeSeries.length ? incomeSeries : [0],
+                            backgroundColor: '#10b981',
+                            borderRadius: 6,
+                            barPercentage: 0.55
+                        },
+                        {
+                            label: 'Gastos',
+                            data: expenseSeries.length ? expenseSeries : [0],
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 6,
+                            barPercentage: 0.55
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: { color: textColor, usePointStyle: true, boxWidth: 8, font: { family: 'Inter', size: 11 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#111113',
+                            borderColor: '#27272a',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatCLP(ctx.parsed.y)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 11 } } },
+                        y: {
+                            grid: { color: gridColor },
+                            border: { display: false },
+                            ticks: {
+                                color: textColor,
+                                font: { family: 'Inter', size: 11 },
+                                callback: (val) => formatCLP(val)
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Gastos por Categoría
+            const expenseByCat = {};
+            transactions.filter(t => t.type === 'expense').forEach(tx => {
+                expenseByCat[tx.category] = (expenseByCat[tx.category] || 0) + Math.round(Number(tx.amount));
+            });
+
+            const catLabels = Object.keys(expenseByCat);
+            const catValues = Object.values(expenseByCat);
+            const catColors = catLabels.map(c => (categoryMeta[c]?.color || '#6366f1'));
+
+            const ctxDoughnut = document.getElementById('categoryChart').getContext('2d');
+            const emptyMsg = document.getElementById('empty-chart-msg');
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            if (catLabels.length === 0) {
+                emptyMsg.classList.remove('hidden');
+            } else {
+                emptyMsg.classList.add('hidden');
+                categoryChartInstance = new Chart(ctxDoughnut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catValues,
+                            backgroundColor: catColors,
+                            borderColor: '#09090b',
+                            borderWidth: 2,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '72%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: textColor, usePointStyle: true, boxWidth: 8, padding: 12, font: { family: 'Inter', size: 11 } }
+                            },
+                            tooltip: {
+                                backgroundColor: '#111113',
+                                borderColor: '#27272a',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: (ctx) => `${ctx.label}: ${formatCLP(ctx.parsed)}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ==========================================
+        // 7. NAVEGACIÓN, EXPORTACIÓN CSV/JSON Y EXTRAS
+        // ==========================================
+        window.switchTab = (tab) => {
+            const summary = document.getElementById('section-summary');
+            const charts = document.getElementById('section-charts');
+            const txs = document.getElementById('section-transactions');
+
+            document.querySelectorAll('.nav-btn-desk').forEach(b => {
+                b.className = 'nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900/70 transition-all';
+            });
+            const activeDesk = document.getElementById(`nav-desk-${tab}`);
+            if (activeDesk) {
+                activeDesk.className = 'nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-zinc-900 text-white border border-zinc-800 transition-all';
+            }
+
+            document.querySelectorAll('.nav-btn-mob').forEach(b => {
+                b.className = 'nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500';
+            });
+            const activeMob = document.getElementById(`nav-mob-${tab}`);
+            if (activeMob) {
+                activeMob.className = 'nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-indigo-400';
+            }
+
+            if (tab === 'dashboard') {
+                summary.classList.remove('hidden');
+                charts.classList.remove('hidden');
+                txs.classList.remove('hidden');
+                document.getElementById('page-title').textContent = 'Balance General';
+            } else if (tab === 'transactions') {
+                summary.classList.add('hidden');
+                charts.classList.add('hidden');
+                txs.classList.remove('hidden');
+                document.getElementById('page-title').textContent = 'Historial de Movimientos';
+            } else if (tab === 'analytics') {
+                summary.classList.remove('hidden');
+                charts.classList.remove('hidden');
+                txs.classList.add('hidden');
+                document.getElementById('page-title').textContent = 'Gráficos y Análisis';
+            }
+        };
+
+        window.exportCSV = () => {
+            if (transactions.length === 0) {
+                showToast('No hay movimientos para exportar');
+                return;
+            }
+            const headers = ['ID', 'Tipo', 'Monto_CLP', 'Monto_Formateado', 'Descripcion', 'Categoria', 'Fecha'];
+            const rows = transactions.map(t => [
+                t.id,
+                t.type === 'income' ? 'Ingreso' : 'Gasto',
+                Math.round(Number(t.amount)),
+                `"${formatCLP(t.amount)}"`,
+                `"${t.title.replace(/"/g, '""')}"`,
+                `"${t.category}"`,
+                t.date
+            ]);
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const link = document.createElement('a');
+            link.setAttribute('href', encodeURI(csvContent));
+            link.setAttribute('download', `NovaFinance_CLP_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV descargado');
+        };
+
+        window.exportJSON = () => {
+            if (transactions.length === 0) {
+                showToast('No hay movimientos para respaldar');
+                return;
+            }
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(transactions, null, 2));
+            const link = document.createElement('a');
+            link.setAttribute('href', dataStr);
+            link.setAttribute('download', `NovaFinance_Respaldo_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Respaldo JSON descargado');
+        };
+
+        window.importJSON = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!Array.isArray(imported)) throw new Error('Formato inválido');
+
+                    if (currentUser && db) {
+                        const batch = writeBatch(db);
+                        imported.forEach(item => {
+                            if (item.title && item.amount && item.type && item.date) {
+                                const id = String(item.id || Date.now() + Math.random());
+                                batch.set(doc(db, 'users', currentUser.uid, 'transactions', id), {
+                                    type: item.type,
+                                    amount: Math.round(Number(item.amount)),
+                                    title: item.title,
+                                    category: item.category || 'Otros',
+                                    date: item.date,
+                                    updatedAt: Date.now()
+                                });
+                            }
+                        });
+                        await batch.commit();
+                        showToast('Respaldo restaurado en la nube');
+                    } else {
+                        transactions = imported;
+                        saveLocalTransactions();
+                        updateUI();
+                        showToast('Respaldo restaurado localmente');
+                    }
+                } catch {
+                    showToast('Archivo JSON no válido');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        };
+
+        window.loadDemoData = async () => {
+            const demos = getDemoTransactions();
+            if (currentUser && db) {
+                const batch = writeBatch(db);
+                demos.forEach(d => {
+                    batch.set(doc(db, 'users', currentUser.uid, 'transactions', d.id), d);
+                });
+                await batch.commit();
+                showToast('Ejemplos cargados en la nube');
+            } else {
+                transactions = demos;
+                saveLocalTransactions();
+                updateUI();
+                showToast('Datos de ejemplo restaurados');
+            }
+        };
+
+        window.confirmClearAll = () => {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            document.getElementById('confirm-modal').classList.add('flex');
+        };
+
+        window.closeConfirmModal = () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            document.getElementById('confirm-modal').classList.remove('flex');
+        };
+
+        window.executeClearAll = async () => {
+            if (currentUser && db) {
+                const colRef = collection(db, 'users', currentUser.uid, 'transactions');
+                const snap = await getDocs(colRef);
+                const batch = writeBatch(db);
+                snap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                showToast('Registros eliminados de la nube');
+            } else {
+                transactions = [];
+                saveLocalTransactions();
+                updateUI();
+                showToast('Registros eliminados');
+            }
+            closeConfirmModal();
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Inicialización al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = new Date().toLocaleDateString('es-CL', options);
+            document.getElementById('current-date-label').textContent = `${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)} • Pesos Chilenos (CLP)`;
+            lucide.createIcons();
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
