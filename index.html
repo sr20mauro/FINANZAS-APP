@@ -3,1807 +3,957 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NovaFinance | Finanzas Personales & Nube</title>
+    <title>Billetera CLP — Control Personal</title>
     
-    <!-- Meta Tags PWA -->
+    <!-- Meta Tags PWA y Móvil -->
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="NovaFinance">
-    <meta name="description" content="Gestión minimalista de finanzas personales en pesos chilenos (CLP) con sincronización por sesión en la nube.">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Billetera CLP">
+    <meta name="description" content="Control minimalista de ingresos, gastos y balance en Pesos Chilenos (CLP).">
     
-    <!-- Icono Apple Touch y Manifest PWA nativo generados en PNG real desde <head> -->
-    <link id="apple-touch-icon-link" rel="apple-touch-icon" sizes="180x180" href="">
-    <script>
-        // Capturar el evento nativo de instalación lo antes posible
-        window.__deferredInstallPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            window.__deferredInstallPrompt = e;
-            const btn = document.getElementById('install-pwa-btn');
-            if (btn) btn.classList.add('ring-2', 'ring-emerald-400');
-        });
+    <!-- Icono Apple Touch en SVG Data URI -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Crect x='24' y='24' width='464' height='464' rx='96' fill='none' stroke='%23222222' stroke-width='12'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, -apple-system, sans-serif' font-weight='800' font-size='220' fill='%2310B981'%3E$%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, -apple-system, sans-serif' font-weight='800' font-size='240' fill='%2310B981'%3E$%3C/text%3E%3C/svg%3E">
+    
+    <!-- Enlace dinámico para el Web App Manifest -->
+    <link id="pwa-manifest" rel="manifest" href="">
 
-        // Generar iconos PNG reales (192x192 y 512x512) y Manifest con rutas absolutas
-        (function initEarlyPWAManifest() {
-            function createPngIcon(size) {
-                const canvas = document.createElement('canvas');
-                canvas.width = size;
-                canvas.height = size;
-                const ctx = canvas.getContext('2d');
+    <!-- Fuente Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-                // Fondo negro puro redondeado
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, size, size);
-
-                // Gradiente marca NovaFinance
-                const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#6366f1');
-                grad.addColorStop(1, '#10b981');
-
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = Math.round(size * 0.086);
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                const s = size / 512;
-                ctx.beginPath();
-                ctx.moveTo(144 * s, 336 * s);
-                ctx.lineTo(144 * s, 176 * s);
-                ctx.lineTo(256 * s, 336 * s);
-                ctx.lineTo(256 * s, 176 * s);
-                ctx.moveTo(368 * s, 176 * s);
-                ctx.lineTo(368 * s, 336 * s);
-                ctx.stroke();
-
-                return canvas.toDataURL('image/png');
-            }
-
-            const icon180 = createPngIcon(180);
-            const icon192 = createPngIcon(192);
-            const icon512 = createPngIcon(512);
-
-            const appleLink = document.getElementById('apple-touch-icon-link');
-            if (appleLink) appleLink.href = icon180;
-
-            const appUrl = window.location.href.split('#')[0];
-            const manifest = {
-                id: appUrl,
-                name: "NovaFinance - Finanzas Personales CLP",
-                short_name: "NovaFinance",
-                description: "Gestión minimalista de ingresos, gastos y balance general en pesos chilenos.",
-                start_url: appUrl,
-                scope: appUrl.substring(0, appUrl.lastIndexOf('/') + 1),
-                display: "standalone",
-                display_override: ["standalone", "minimal-ui"],
-                background_color: "#000000",
-                theme_color: "#000000",
-                orientation: "portrait-primary",
-                icons: [
-                    { src: icon192, sizes: "192x192", type: "image/png", purpose: "any" },
-                    { src: icon192, sizes: "192x192", type: "image/png", purpose: "maskable" },
-                    { src: icon512, sizes: "512x512", type: "image/png", purpose: "any" },
-                    { src: icon512, sizes: "512x512", type: "image/png", purpose: "maskable" }
-                ]
-            };
-
-            const manifestDataUri = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
-            const link = document.createElement('link');
-            link.rel = 'manifest';
-            try {
-                // Chrome en Android requiere un Blob URL same-origin para validar el manifest PWA
-                const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-                link.href = URL.createObjectURL(blob);
-            } catch (e) {
-                link.href = manifestDataUri;
-            }
-            document.head.appendChild(link);
-        })();
-
-        // Registrar Service Worker mínimo en el mismo origen (requisito obligatorio de Chrome Android para PWA)
-        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', (e) => self.skipWaiting());
-                    self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-                    });
-                `;
-                try {
-                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-                    const swUrl = URL.createObjectURL(swBlob);
-                    navigator.serviceWorker.register(swUrl).catch(() => {});
-                } catch (err) {}
-            });
-        }
-    </script>
-
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
                     colors: {
-                        oled: '#000000',
-                        surface: '#09090b',
-                        elevated: '#111113'
+                        pureblack: '#000000',
+                        carddark: '#0A0A0A',
+                        cardelevated: '#111111',
+                        borderdark: '#222222',
+                        emeraldclp: '#10B981',
+                        coralclp: '#EF4444'
                     }
                 }
             }
         }
     </script>
 
-    <!-- Tipografía Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Inyección dinámica de Manifest PWA y Service Worker -->
+    <script>
+        (function setupPWA() {
+            const svgIcon = "data:image/svg+xml;utf8," + encodeURIComponent(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <rect width="512" height="512" rx="112" fill="#000000"/>
+                    <rect x="20" y="20" width="472" height="472" rx="96" fill="none" stroke="#222222" stroke-width="12"/>
+                    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="220" fill="#10B981">$</text>
+                </svg>`
+            );
 
-    <!-- Lucide Icons & Chart.js -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            const manifestObj = {
+                name: "Billetera CLP — Control Personal",
+                short_name: "Billetera CLP",
+                description: "Control minimalista de ingresos, gastos y balance en Pesos Chilenos (CLP).",
+                start_url: window.location.href,
+                display: "standalone",
+                background_color: "#000000",
+                theme_color: "#000000",
+                orientation: "portrait",
+                icons: [
+                    { src: svgIcon, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+                    { src: svgIcon, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+                ]
+            };
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #000000;
-            color: #fafafa;
-            -webkit-tap-highlight-color: transparent;
-        }
+            try {
+                const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+                const manifestUrl = URL.createObjectURL(manifestBlob);
+                document.getElementById('pwa-manifest').setAttribute('href', manifestUrl);
+            } catch (e) {
+                console.warn('No se pudo generar el manifest dinámico:', e);
+            }
 
-        /* Tarjetas minimalistas de alto contraste negro puro */
-        .oled-card {
-            background-color: #09090b;
-            border: 1px solid #27272a;
-        }
-
-        .oled-card-elevated {
-            background-color: #111113;
-            border: 1px solid #27272a;
-        }
-
-        .balance-hero {
-            background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.14), transparent 55%),
-                        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.10), transparent 55%),
-                        #09090b;
-            border: 1px solid #27272a;
-        }
-
-        /* Ocultar flechas en inputs numéricos */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-up {
-            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #000000;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #27272a;
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3f3f46;
-        }
-    </style>
+            // Registro de Service Worker vía Blob en entornos compatibles (HTTPS / localhost)
+            if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                const swCode = `
+                    const CACHE_NAME = 'billetera-clp-v1';
+                    self.addEventListener('install', (event) => {
+                        self.skipWaiting();
+                    });
+                    self.addEventListener('activate', (event) => {
+                        event.waitUntil(clients.claim());
+                    });
+                    self.addEventListener('fetch', (event) => {
+                        if (event.request.method !== 'GET') return;
+                        event.respondWith(
+                            fetch(event.request).catch(() => caches.match(event.request))
+                        );
+                    });
+                `;
+                try {
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(swBlob);
+                    navigator.serviceWorker.register(swUrl).catch(() => {
+                        // Algunos navegadores bloquean SW desde Blob URL en subdominios específicos; falla silenciosa segura
+                    });
+                } catch (err) {
+                    console.warn('Service Worker omitido:', err);
+                }
+            }
+        })();
+    </script>
 </head>
-<body class="bg-oled text-zinc-100 min-h-screen flex flex-col md:flex-row selection:bg-indigo-500/30">
+<body class="bg-pureblack text-white font-sans antialiased min-h-screen selection:bg-emeraldclp selection:text-black">
 
-    <!-- BARRA LATERAL (ESCRITORIO / TABLET HORIZONTAL) -->
-    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-zinc-800 bg-oled z-30">
-        <div class="flex items-center gap-3 px-6 h-20 border-b border-zinc-800">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-black font-extrabold shadow-lg shadow-indigo-500/20">
-                <i data-lucide="wallet" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <span class="font-bold text-lg tracking-tight text-white">NovaFinance</span>
-                <span class="block text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">CLP • Cloud PWA</span>
-            </div>
+    <!-- Notificación Toast Flotante (Reemplaza alert()) -->
+    <div id="toast-container" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md pointer-events-none transition-all duration-300 opacity-0 translate-y-4">
+        <div id="toast-box" class="bg-cardelevated border border-borderdark text-white px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-3">
+            <span id="toast-message" class="text-sm font-medium"></span>
         </div>
-
-        <nav class="flex-1 px-4 py-6 space-y-1.5">
-            <button onclick="switchTab('dashboard')" id="nav-desk-dashboard" class="nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-zinc-900 text-white border border-zinc-800 transition-all">
-                <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-400"></i>
-                Balance General
-            </button>
-            <button onclick="switchTab('transactions')" id="nav-desk-transactions" class="nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900/70 transition-all">
-                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-                Movimientos
-            </button>
-            <button onclick="switchTab('analytics')" id="nav-desk-analytics" class="nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900/70 transition-all">
-                <i data-lucide="pie-chart" class="w-4 h-4"></i>
-                Gráficos y Análisis
-            </button>
-        </nav>
-
-        <div class="p-4 border-t border-zinc-800 space-y-2">
-            <button onclick="openNewModal()" class="cursor-pointer w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                Nuevo Movimiento
-            </button>
-            <div class="grid grid-cols-2 gap-1.5 pt-1">
-                <button onclick="exportCSV()" class="cursor-pointer py-2 px-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white bg-surface border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-1.5 transition-all">
-                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-                    CSV
-                </button>
-                <button onclick="exportJSON()" class="cursor-pointer py-2 px-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white bg-surface border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-1.5 transition-all">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    JSON
-                </button>
-            </div>
-        </div>
-    </aside>
-
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="flex-1 md:pl-64 flex flex-col min-h-screen pb-24 md:pb-10">
-        
-        <!-- CABECERA SUPERIOR -->
-        <header class="sticky top-0 z-20 h-16 md:h-20 px-4 md:px-8 flex items-center justify-between border-b border-zinc-800 bg-black/90 backdrop-blur-xl">
-            <div class="flex items-center gap-2.5 md:hidden">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-black font-bold">
-                    <i data-lucide="wallet" class="w-4 h-4"></i>
-                </div>
-                <span class="font-bold text-base tracking-tight text-white">NovaFinance</span>
-            </div>
-
-            <div class="hidden md:block">
-                <h1 id="page-title" class="text-lg font-bold tracking-tight text-white">Balance General</h1>
-                <p id="current-date-label" class="text-xs text-zinc-400">Pesos Chilenos (CLP)</p>
-            </div>
-
-            <!-- Estado de Sesión, Sincronización e Instalación -->
-            <div class="flex items-center gap-2 sm:gap-2.5">
-                <!-- Indicador Estado Sesión / Nube -->
-                <button onclick="openAuthModal()" id="session-pill" class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-zinc-800 hover:border-zinc-700 text-xs transition-all">
-                    <div id="user-avatar" class="w-5 h-5 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-[10px] font-bold uppercase">
-                        <i data-lucide="user" class="w-3 h-3"></i>
-                    </div>
-                    <div class="text-left hidden sm:block max-w-[150px]">
-                        <span id="session-email" class="block font-medium text-zinc-200 truncate leading-tight">Iniciar Sesión</span>
-                        <span id="sync-status-text" class="flex items-center gap-1 text-[10px] text-amber-400 leading-tight">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                            Modo Local
-                        </span>
-                    </div>
-                    <span id="sync-dot-mobile" class="sm:hidden w-2 h-2 rounded-full bg-amber-400"></span>
-                </button>
-
-                <!-- Botón Cerrar Sesión (Visible solo autenticado) -->
-                <button onclick="handleSignOut()" id="logout-btn" title="Cerrar sesión" class="hidden cursor-pointer p-2 rounded-xl bg-surface border border-zinc-800 hover:border-rose-500/50 text-zinc-400 hover:text-rose-400 transition-colors">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                </button>
-
-                <!-- Botón Instalar App PWA -->
-                <button id="install-pwa-btn" onclick="handleInstallClick()" class="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-all active:scale-95">
-                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-                    <span>Instalar</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- BANNER INVITACIÓN A SINCRONIZAR (Cuando está en modo local) -->
-        <div id="local-warning-banner" class="max-w-6xl w-full mx-auto px-4 md:px-8 pt-4">
-            <div class="oled-card rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-indigo-500/30">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
-                        <i data-lucide="cloud-off" class="w-4 h-4"></i>
-                    </div>
-                    <div class="text-xs">
-                        <p class="font-semibold text-zinc-100">Tus datos están guardados solo en este dispositivo</p>
-                        <p class="text-zinc-400">Inicia sesión para respaldar y sincronizar automáticamente en la nube entre teléfono y tablet.</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="openAuthModal()" class="cursor-pointer px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
-                        Iniciar Sesión / Crear Cuenta
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ÁREA DE VISTAS -->
-        <main class="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 pt-5 space-y-5">
-
-            <!-- SECCIÓN 1: TARJETAS DE BALANCE GENERAL -->
-            <section id="section-summary" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                
-                <!-- Tarjeta Principal: Balance Disponible -->
-                <div class="lg:col-span-6 balance-hero rounded-2xl p-6 flex flex-col justify-between">
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                Balance Disponible (CLP)
-                            </span>
-                            <h2 id="total-balance" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mt-2">$0</h2>
-                        </div>
-                        <div id="health-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shrink-0">
-                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-                            <span>Óptimo</span>
-                        </div>
-                    </div>
-
-                    <!-- Barra de Tasa de Ahorro -->
-                    <div class="mt-6 space-y-2">
-                        <div class="flex justify-between text-xs">
-                            <span class="text-zinc-400">Tasa de ahorro sobre ingresos</span>
-                            <span id="savings-rate-text" class="font-bold text-white">0%</span>
-                        </div>
-                        <div class="w-full h-2 bg-zinc-900 border border-zinc-800 rounded-full overflow-hidden">
-                            <div id="savings-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tarjeta: Total Ingresos -->
-                <div class="lg:col-span-3 oled-card rounded-2xl p-6 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Ingresos</span>
-                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div id="total-income" class="text-2xl font-bold text-emerald-400 tracking-tight">$0</div>
-                        <p id="income-count" class="text-xs text-zinc-400 mt-1">0 ingresos registrados</p>
-                    </div>
-                </div>
-
-                <!-- Tarjeta: Total Gastos -->
-                <div class="lg:col-span-3 oled-card rounded-2xl p-6 flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Gastos</span>
-                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
-                            <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div id="total-expense" class="text-2xl font-bold text-rose-400 tracking-tight">$0</div>
-                        <p id="expense-count" class="text-xs text-zinc-400 mt-1">0 gastos registrados</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECCIÓN 2: GRÁFICOS RESPONSIVOS -->
-            <section id="section-charts" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                <!-- Gráfico Mensual Ingresos vs Gastos -->
-                <div class="lg:col-span-7 oled-card rounded-2xl p-5 sm:p-6 flex flex-col">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="font-semibold text-sm sm:text-base text-white">Flujo Mensual (Ingresos vs. Gastos)</h3>
-                            <p class="text-xs text-zinc-400">Evolución en pesos chilenos</p>
-                        </div>
-                        <span class="text-[11px] px-2.5 py-1 rounded-lg bg-elevated border border-zinc-800 text-zinc-300 font-medium">CLP</span>
-                    </div>
-                    <div class="relative flex-1 min-h-[230px] w-full">
-                        <canvas id="cashflowChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Gráfico de Dona: Distribución de Gastos -->
-                <div class="lg:col-span-5 oled-card rounded-2xl p-5 sm:p-6 flex flex-col">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="font-semibold text-sm sm:text-base text-white">Gastos por Categoría</h3>
-                            <p class="text-xs text-zinc-400">Distribución porcentual</p>
-                        </div>
-                    </div>
-                    <div class="relative flex-1 min-h-[230px] w-full flex items-center justify-center">
-                        <canvas id="categoryChart"></canvas>
-                        <div id="empty-chart-msg" class="hidden text-center text-xs text-zinc-500">
-                            Sin gastos registrados para graficar
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECCIÓN 3: LISTADO INTERACTIVO DE MOVIMIENTOS -->
-            <section id="section-transactions" class="oled-card rounded-2xl p-5 sm:p-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-                    <div>
-                        <h3 class="font-semibold text-base text-white">Historial de Movimientos</h3>
-                        <p class="text-xs text-zinc-400">Filtra, edita o administra tus registros</p>
-                    </div>
-
-                    <!-- Búsqueda y Filtros -->
-                    <div class="flex flex-wrap items-center gap-2">
-                        <div class="relative flex-1 sm:flex-initial">
-                            <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                            <input type="text" id="search-input" oninput="renderTransactions()" placeholder="Buscar descripción o categoría..." class="w-full sm:w-52 pl-9 pr-3 py-1.5 text-xs rounded-xl bg-oled border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
-                        </div>
-
-                        <div class="flex p-1 rounded-xl bg-oled border border-zinc-800 text-xs">
-                            <button onclick="setFilter('all')" id="filter-all" class="filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-semibold bg-elevated text-white border border-zinc-700 transition-all">Todos</button>
-                            <button onclick="setFilter('income')" id="filter-income" class="filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-medium text-zinc-400 hover:text-white transition-all">Ingresos</button>
-                            <button onclick="setFilter('expense')" id="filter-expense" class="filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-medium text-zinc-400 hover:text-white transition-all">Gastos</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Lista de Tarjetas / Filas -->
-                <div id="transactions-list" class="divide-y divide-zinc-800/80">
-                    <!-- Renderizado dinámico JS -->
-                </div>
-
-                <!-- Pie de Herramientas y Respaldo -->
-                <div class="mt-6 pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
-                    <span id="showing-count">Mostrando 0 movimientos</span>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <label class="cursor-pointer hover:text-indigo-400 transition-colors flex items-center gap-1">
-                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                            <span>Restaurar JSON</span>
-                            <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
-                        </label>
-                        <button onclick="loadDemoData()" class="cursor-pointer hover:text-indigo-400 transition-colors flex items-center gap-1">
-                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                            Cargar ejemplos
-                        </button>
-                        <button onclick="confirmClearAll()" class="cursor-pointer hover:text-rose-400 transition-colors flex items-center gap-1">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            Limpiar todo
-                        </button>
-                    </div>
-                </div>
-            </section>
-        </main>
     </div>
 
-    <!-- NAVEGACIÓN INFERIOR MÓVIL -->
-    <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-black/95 backdrop-blur-xl border-t border-zinc-800 px-2 py-2 flex items-center justify-around">
-        <button onclick="switchTab('dashboard')" id="nav-mob-dashboard" class="nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-indigo-400">
-            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-            <span class="text-[10px] font-semibold">Balance</span>
-        </button>
-        <button onclick="switchTab('transactions')" id="nav-mob-transactions" class="nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500">
-            <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Movimientos</span>
-        </button>
-        
-        <!-- Botón Central Rápido -->
-        <button onclick="openNewModal()" aria-label="Nuevo movimiento" class="cursor-pointer w-12 h-12 -mt-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 active:scale-90 transition-transform">
-            <i data-lucide="plus" class="w-6 h-6"></i>
-        </button>
+    <!-- Modal de Confirmación de Eliminación -->
+    <div id="delete-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-carddark border border-borderdark rounded-2xl w-full max-w-sm p-6 space-y-5">
+            <div class="space-y-2">
+                <h3 class="text-lg font-bold text-white">Eliminar movimiento</h3>
+                <p id="delete-modal-desc" class="text-sm text-neutral-400">¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="flex items-center justify-end gap-3">
+                <button id="cancel-delete-btn" type="button" class="cursor-pointer px-4 py-2.5 rounded-xl bg-cardelevated border border-borderdark text-sm font-medium text-neutral-300 hover:text-white hover:border-neutral-600 transition-colors">
+                    Cancelar
+                </button>
+                <button id="confirm-delete-btn" type="button" class="cursor-pointer px-4 py-2.5 rounded-xl bg-coralclp text-sm font-semibold text-white hover:bg-red-600 transition-colors">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
 
-        <button onclick="switchTab('analytics')" id="nav-mob-analytics" class="nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500">
-            <i data-lucide="pie-chart" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Gráficos</span>
-        </button>
-        <button onclick="openAuthModal()" class="cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500">
-            <i data-lucide="cloud" class="w-5 h-5"></i>
-            <span class="text-[10px] font-medium">Sesión</span>
-        </button>
-    </nav>
+    <!-- Modal de Instrucciones PWA -->
+    <div id="pwa-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-carddark border border-borderdark rounded-2xl w-full max-w-md p-6 space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-white">Instalar App en tu dispositivo</h3>
+                <button id="close-pwa-modal" type="button" class="cursor-pointer p-1.5 rounded-lg text-neutral-400 hover:text-white bg-cardelevated border border-borderdark">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-neutral-300">
+                <div class="p-3.5 rounded-xl bg-cardelevated border border-borderdark space-y-1.5">
+                    <p class="font-semibold text-white">En iPhone / iPad (Safari):</p>
+                    <p class="text-neutral-400 leading-relaxed">1. Toca el botón <strong class="text-white">Compartir</strong> (cuadrado con flecha hacia arriba) en la barra inferior.<br>2. Desliza y selecciona <strong class="text-white">"Agregar a inicio"</strong>.</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-cardelevated border border-borderdark space-y-1.5">
+                    <p class="font-semibold text-white">En Android (Chrome):</p>
+                    <p class="text-neutral-400 leading-relaxed">1. Toca el menú de tres puntos <strong class="text-white">(⋮)</strong> arriba a la derecha.<br>2. Selecciona <strong class="text-white">"Instalar aplicación"</strong> o <strong class="text-white">"Agregar a la pantalla principal"</strong>.</p>
+                </div>
+            </div>
+            <button id="native-install-btn" type="button" class="hidden cursor-pointer w-full py-3 rounded-xl bg-emeraldclp text-black font-bold text-sm hover:bg-emerald-400 transition-colors">
+                Instalar ahora directamente
+            </button>
+        </div>
+    </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL 1: FORMULARIO INGRESO / GASTO        -->
-    <!-- ========================================== -->
-    <div id="transaction-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
-            <div class="flex items-center justify-between mb-5">
-                <h3 id="modal-title" class="text-lg font-bold text-white">Nuevo Movimiento</h3>
-                <button onclick="closeNewModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+    <!-- Pantalla de Carga Inicial -->
+    <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center p-6">
+        <div class="w-10 h-10 border-2 border-borderdark border-t-emeraldclp rounded-full animate-spin mb-4"></div>
+        <p class="text-sm text-neutral-400 font-medium">Conectando cuenta personal...</p>
+    </div>
+
+    <!-- PANTALLA DE AUTENTICACIÓN (LOGIN / REGISTRO) -->
+    <div id="auth-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+        <div class="w-full max-w-md bg-carddark border border-borderdark rounded-2xl p-6 sm:p-8 space-y-6">
+            <!-- Encabezado Marca -->
+            <div class="space-y-2 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cardelevated border border-borderdark text-emeraldclp font-extrabold text-2xl mb-1">
+                    $
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Billetera CLP</h1>
+                <p class="text-sm text-neutral-400">Control personal de ingresos y gastos en pesos chilenos.</p>
+            </div>
+
+            <!-- Tabs Iniciar Sesión / Crear Cuenta -->
+            <div class="grid grid-cols-2 p-1 bg-pureblack border border-borderdark rounded-xl">
+                <button id="tab-login" type="button" class="cursor-pointer py-2 text-sm font-semibold rounded-lg bg-cardelevated text-white transition-colors">
+                    Iniciar Sesión
+                </button>
+                <button id="tab-register" type="button" class="cursor-pointer py-2 text-sm font-semibold rounded-lg text-neutral-400 hover:text-white transition-colors">
+                    Crear Cuenta
                 </button>
             </div>
 
-            <form id="transaction-form" onsubmit="saveTransaction(event)" class="space-y-4">
-                <input type="hidden" id="edit-id">
-
-                <!-- Selector Ingreso / Gasto -->
-                <div class="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-oled border border-zinc-800">
-                    <button type="button" id="type-btn-expense" onclick="setTransactionType('expense')" class="cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-rose-600 text-white transition-all">
-                        <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
-                        Gasto
-                    </button>
-                    <button type="button" id="type-btn-income" onclick="setTransactionType('income')" class="cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-all">
-                        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-                        Ingreso
-                    </button>
+            <!-- Formulario Correo / Contraseña -->
+            <form id="auth-form" class="space-y-4">
+                <div id="name-field-container" class="hidden space-y-1.5">
+                    <label for="auth-name" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Nombre o Alias</label>
+                    <input id="auth-name" type="text" placeholder="Ej. Camila Soto" class="w-full px-3.5 py-3 rounded-xl bg-pureblack border border-borderdark text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                 </div>
 
-                <!-- Monto Entero en Pesos Chilenos -->
-                <div>
-                    <label class="block text-xs font-medium text-zinc-400 mb-1">Monto en Pesos Chilenos (CLP)</label>
-                    <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-zinc-500">$</span>
-                        <input type="number" id="tx-amount" inputmode="numeric" step="1" min="1" required placeholder="0" class="w-full pl-10 pr-4 py-3 text-2xl font-extrabold rounded-2xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
-                    </div>
+                <div class="space-y-1.5">
+                    <label for="auth-email" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Correo Electrónico</label>
+                    <input id="auth-email" type="email" required placeholder="tu@correo.cl" class="w-full px-3.5 py-3 rounded-xl bg-pureblack border border-borderdark text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                 </div>
 
-                <!-- Descripción -->
-                <div>
-                    <label class="block text-xs font-medium text-zinc-400 mb-1">Descripción</label>
-                    <input type="text" id="tx-title" required placeholder="Ej. Sueldo mensual, Supermercado, Arriendo..." class="w-full px-4 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                <div class="space-y-1.5">
+                    <label for="auth-password" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Contraseña</label>
+                    <input id="auth-password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-3.5 py-3 rounded-xl bg-pureblack border border-borderdark text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                 </div>
 
-                <!-- Categoría y Fecha -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Categoría</label>
-                        <select id="tx-category" class="cursor-pointer w-full px-3 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
-                            <option value="Sueldo">Sueldo</option>
-                            <option value="Ventas/Proyectos">Ventas / Proyectos</option>
-                            <option value="Inversiones">Inversiones</option>
-                            <option value="Arriendo/Dividendo">Arriendo / Dividendo</option>
-                            <option value="Supermercado">Supermercado</option>
-                            <option value="Cuentas/Servicios">Cuentas / Servicios</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Salud">Salud</option>
-                            <option value="Ocio">Ocio</option>
-                            <option value="Otros">Otros</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Fecha</label>
-                        <input type="date" id="tx-date" required class="cursor-pointer w-full px-3 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
-                    </div>
-                </div>
-
-                <div class="pt-2 flex gap-2">
-                    <button type="button" onclick="closeNewModal()" class="cursor-pointer flex-1 py-3 rounded-xl text-sm font-medium bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-colors">Cancelar</button>
-                    <button type="submit" class="cursor-pointer flex-1 py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all">Guardar</button>
-                </div>
+                <button id="auth-submit-btn" type="submit" class="cursor-pointer w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors">
+                    Entrar a mi cuenta
+                </button>
             </form>
-        </div>
-    </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL 2: ACCESO POR SESIÓN (FIREBASE AUTH) -->
-    <!-- ========================================== -->
-    <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
-                        <i data-lucide="shield" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-base text-white">Cuenta y Sincronización</h3>
-                        <p id="auth-cloud-subtitle" class="text-xs text-zinc-400">Respalda tus finanzas en la nube</p>
-                    </div>
-                </div>
-                <button onclick="closeAuthModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+            <!-- Separador -->
+            <div class="relative flex items-center py-1">
+                <div class="flex-grow border-t border-borderdark"></div>
+                <span class="flex-shrink mx-3 text-xs text-neutral-500 uppercase">o continuar con</span>
+                <div class="flex-grow border-t border-borderdark"></div>
             </div>
 
-            <!-- Vista cuando YA hay sesión iniciada -->
-            <div id="auth-logged-in-view" class="hidden space-y-4">
-                <div class="p-4 rounded-2xl bg-oled border border-zinc-800 flex items-center gap-3">
-                    <div id="profile-big-avatar" class="w-11 h-11 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base">
-                        U
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p id="profile-email-display" class="text-sm font-semibold text-white truncate">usuario@correo.cl</p>
-                        <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Sincronización en tiempo real activa
-                        </p>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="openFirebaseConfigModal()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-medium bg-oled border border-zinc-800 text-zinc-300 hover:text-white">
-                        Configurar Firebase
-                    </button>
-                    <button onclick="handleSignOut()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white">
-                        Cerrar Sesión
-                    </button>
-                </div>
-            </div>
-
-            <!-- Vista de Inicio de Sesión / Registro -->
-            <div id="auth-form-view" class="space-y-4">
-                <!-- Alerta si falta configuración de Firebase -->
-                <div id="firebase-missing-notice" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-2">
-                    <p class="font-semibold flex items-center gap-1.5">
-                        <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
-                        Proyecto Firebase requerido para nube
-                    </p>
-                    <p class="text-amber-200/80">Pega las credenciales de tu proyecto Firebase Console para activar el inicio de sesión y respaldo multi-dispositivo.</p>
-                    <button type="button" onclick="openFirebaseConfigModal()" class="cursor-pointer w-full py-2 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors">
-                        Configurar Firebase Ahora
-                    </button>
-                </div>
-
-                <!-- Botón Google -->
-                <button type="button" onclick="handleGoogleSignIn()" id="google-signin-btn" class="cursor-pointer w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm flex items-center justify-center gap-2.5 transition-all">
+            <!-- Acceso con Google -->
+            <div class="space-y-2.5">
+                <button id="google-login-btn" type="button" class="cursor-pointer w-full py-3 px-4 rounded-xl bg-cardelevated border border-borderdark text-white font-medium text-sm hover:border-neutral-600 transition-colors flex items-center justify-center gap-3">
                     <svg class="w-4 h-4" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
-                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"/>
-                        <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"/>
-                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"/>
+                        <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+                        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                        <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.8z"/>
+                        <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 21.1 7.4 24 12 24z"/>
                     </svg>
                     Continuar con Google
                 </button>
 
-                <div class="relative flex py-1 items-center">
-                    <div class="flex-grow border-t border-zinc-800"></div>
-                    <span class="flex-shrink mx-3 text-[11px] uppercase text-zinc-500">o con tu correo</span>
-                    <div class="flex-grow border-t border-zinc-800"></div>
+                <button id="guest-login-btn" type="button" class="cursor-pointer w-full py-2.5 px-4 rounded-xl bg-transparent border border-borderdark text-neutral-400 font-medium text-xs hover:text-white hover:border-neutral-600 transition-colors">
+                    Acceso rápido de prueba (Cuenta local sincronizada)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL PRINCIPAL DE LA APLICACIÓN -->
+    <div id="app-screen" class="hidden min-h-screen flex flex-col">
+        
+        <!-- Barra Superior -->
+        <header class="sticky top-0 z-30 bg-pureblack/90 backdrop-blur-md border-b border-borderdark">
+            <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-cardelevated border border-borderdark flex items-center justify-center text-emeraldclp font-extrabold text-lg shrink-0">
+                        $
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-sm font-bold text-white leading-tight truncate">Billetera CLP</h1>
+                        <p id="user-display" class="text-xs text-neutral-400 truncate">usuario@correo.cl</p>
+                    </div>
                 </div>
 
-                <!-- Tabs Login / Registro -->
-                <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-oled border border-zinc-800 text-xs">
-                    <button type="button" id="auth-tab-login" onclick="setAuthMode('login')" class="cursor-pointer py-1.5 rounded-lg font-semibold bg-elevated text-white border border-zinc-700">Iniciar Sesión</button>
-                    <button type="button" id="auth-tab-register" onclick="setAuthMode('register')" class="cursor-pointer py-1.5 rounded-lg font-medium text-zinc-400 hover:text-white">Crear Cuenta</button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="open-pwa-btn" type="button" title="Instalar como App" class="cursor-pointer px-3 py-2 rounded-xl bg-cardelevated border border-borderdark text-xs font-medium text-neutral-300 hover:text-white hover:border-neutral-600 transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-emeraldclp" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span class="hidden sm:inline">Instalar App</span>
+                    </button>
+                    <button id="logout-btn" type="button" class="cursor-pointer px-3 py-2 rounded-xl bg-cardelevated border border-borderdark text-xs font-medium text-neutral-300 hover:text-coralclp hover:border-neutral-600 transition-colors">
+                        Salir
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-6 space-y-6">
+            
+            <!-- TARJETAS DE RESUMEN -->
+            <section aria-label="Resumen financiero" class="space-y-3">
+                <!-- Balance Total Destacado -->
+                <div class="bg-carddark border border-borderdark rounded-2xl p-5 sm:p-6">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Balance Total</span>
+                        <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-cardelevated border border-borderdark text-neutral-400">CLP</span>
+                    </div>
+                    <div id="balance-amount" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white tabular-nums">
+                        $0
+                    </div>
                 </div>
 
-                <form onsubmit="handleEmailAuth(event)" class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-zinc-400 mb-1">Correo electrónico</label>
-                        <input type="email" id="auth-email" required placeholder="tu@correo.cl" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+                <!-- Ingresos y Gastos -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Total Ingresos -->
+                    <div class="bg-carddark border border-borderdark rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emeraldclp"></span>
+                            <span class="text-xs font-medium text-neutral-400">Ingresos</span>
+                        </div>
+                        <div id="income-amount" class="text-xl sm:text-2xl font-bold text-emeraldclp tabular-nums truncate">
+                            $0
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs text-zinc-400 mb-1">Contraseña (mínimo 6 caracteres)</label>
-                        <input type="password" id="auth-password" minlength="6" required placeholder="••••••••" class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-oled border border-zinc-800 text-white focus:outline-none focus:border-indigo-500">
+
+                    <!-- Total Gastos -->
+                    <div class="bg-carddark border border-borderdark rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="w-2 h-2 rounded-full bg-coralclp"></span>
+                            <span class="text-xs font-medium text-neutral-400">Gastos</span>
+                        </div>
+                        <div id="expense-amount" class="text-xl sm:text-2xl font-bold text-coralclp tabular-nums truncate">
+                            $0
+                        </div>
                     </div>
-                    <p id="auth-error-msg" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl"></p>
-                    <button type="submit" id="auth-submit-btn" class="cursor-pointer w-full py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all">
-                        Iniciar Sesión
+                </div>
+            </section>
+
+            <!-- FORMULARIO RÁPIDO DE REGISTRO -->
+            <section aria-label="Registrar movimiento" class="bg-carddark border border-borderdark rounded-2xl p-5 sm:p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-bold text-white">Nuevo Movimiento</h2>
+                </div>
+
+                <form id="transaction-form" class="space-y-4">
+                    <!-- Selector de Tipo (Ingreso / Gasto) -->
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-pureblack border border-borderdark rounded-xl">
+                        <button type="button" id="type-expense-btn" data-type="expense" class="cursor-pointer py-2.5 rounded-lg text-sm font-semibold bg-coralclp text-white transition-colors">
+                            Gasto (-)
+                        </button>
+                        <button type="button" id="type-income-btn" data-type="income" class="cursor-pointer py-2.5 rounded-lg text-sm font-semibold text-neutral-400 hover:text-white transition-colors">
+                            Ingreso (+)
+                        </button>
+                    </div>
+
+                    <!-- Monto en CLP -->
+                    <div class="space-y-1.5">
+                        <label for="tx-amount" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Monto en Pesos (CLP)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-lg">$</span>
+                            <input id="tx-amount" type="text" inputmode="numeric" required placeholder="15.000" autocomplete="off" class="w-full pl-9 pr-4 py-3.5 rounded-xl bg-pureblack border border-borderdark text-white text-xl font-bold placeholder-neutral-700 focus:outline-none focus:border-neutral-500 transition-colors tabular-nums">
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="space-y-1.5">
+                        <label for="tx-description" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Descripción</label>
+                        <input id="tx-description" type="text" required maxlength="60" placeholder="Ej. Supermercado, Sueldo, Bencina..." class="w-full px-3.5 py-3 rounded-xl bg-pureblack border border-borderdark text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                    </div>
+
+                    <!-- Categoría y Fecha -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                            <label for="tx-category" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Categoría</label>
+                            <select id="tx-category" class="cursor-pointer w-full px-3.5 py-3 rounded-xl bg-pureblack border border-borderdark text-white text-sm focus:outline-none focus:border-neutral-500 transition-colors">
+                                <option value="Alimentación">Alimentación</option>
+                                <option value="Transporte">Transporte</option>
+                                <option value="Hogar">Hogar</option>
+                                <option value="Sueldo">Sueldo</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="tx-date" class="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Fecha</label>
+                            <input id="tx-date" type="date" required class="cursor-pointer w-full px-3.5 py-3 rounded-xl bg-pureblack border border-borderdark text-white text-sm focus:outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]">
+                        </div>
+                    </div>
+
+                    <!-- Botón Guardar -->
+                    <button id="save-tx-btn" type="submit" class="cursor-pointer w-full py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-neutral-200 transition-colors">
+                        Registrar Movimiento
                     </button>
                 </form>
+            </section>
 
-                <div class="pt-2 border-t border-zinc-800 flex items-center justify-between text-xs">
-                    <button type="button" onclick="openFirebaseConfigModal()" class="cursor-pointer text-zinc-400 hover:text-indigo-400 flex items-center gap-1">
-                        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-                        Configurar Firebase
-                    </button>
-                    <button type="button" onclick="closeAuthModal()" class="cursor-pointer text-zinc-400 hover:text-white">
-                        Seguir en Modo Local
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MODAL 3: CONFIGURADOR CREDENCIALES FIREBASE -->
-    <!-- ========================================== -->
-    <div id="firebase-config-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-bold text-base text-white">Configurar Firebase Cloud</h3>
-                <button onclick="closeFirebaseConfigModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <p class="text-xs text-zinc-400 mb-3">
-                Pega el objeto <code class="text-indigo-400">firebaseConfig</code> (JSON o código JS desde Firebase Console &gt; Configuración del proyecto) para habilitar Authentication y Firestore.
-            </p>
-            <textarea id="firebase-config-input" rows="7" placeholder='{
-  "apiKey": "AIzaSy...",
-  "authDomain": "tu-proyecto.firebaseapp.com",
-  "projectId": "tu-proyecto",
-  "storageBucket": "tu-proyecto.appspot.com",
-  "messagingSenderId": "123456789",
-  "appId": "1:123456789:web:abcdef"
-}' class="w-full p-3 text-xs font-mono rounded-2xl bg-oled border border-zinc-800 text-zinc-200 focus:outline-none focus:border-indigo-500"></textarea>
-            <p id="config-error-msg" class="hidden text-xs text-rose-400 mt-2"></p>
-            <div class="mt-4 flex gap-2">
-                <button type="button" onclick="clearFirebaseConfig()" class="cursor-pointer py-2.5 px-3 rounded-xl text-xs font-medium bg-oled border border-zinc-800 text-rose-400 hover:bg-rose-500/10">
-                    Borrar Config
-                </button>
-                <button type="button" onclick="saveFirebaseConfig()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">
-                    Guardar y Conectar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MODAL 4: INSTALACIÓN NATIVA PWA            -->
-    <!-- ========================================== -->
-    <div id="install-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-        <div class="oled-card-elevated rounded-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-black">
-                        <i data-lucide="smartphone" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-base text-white">Instalar NovaFinance</h3>
-                        <p class="text-xs text-zinc-400">App nativa a pantalla completa</p>
+            <!-- HISTORIAL DE MOVIMIENTOS -->
+            <section aria-label="Historial de movimientos" class="space-y-3 pb-10">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <h2 class="text-base font-bold text-white">Historial de Movimientos</h2>
+                    
+                    <!-- Filtros -->
+                    <div class="inline-flex p-1 bg-carddark border border-borderdark rounded-xl self-start sm:self-auto">
+                        <button type="button" data-filter="all" class="filter-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold bg-cardelevated text-white transition-colors">
+                            Todos
+                        </button>
+                        <button type="button" data-filter="income" class="filter-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white transition-colors">
+                            Ingresos
+                        </button>
+                        <button type="button" data-filter="expense" class="filter-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white transition-colors">
+                            Gastos
+                        </button>
                     </div>
                 </div>
-                <button onclick="closeInstallModal()" class="cursor-pointer p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
 
-            <div class="space-y-3 text-xs text-zinc-300">
-                <div id="pwa-env-warning" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-2">
-                    <p><strong>Aviso importante:</strong> Estás abriendo la app desde una vista previa embebida o navegador interno. Para instalarla en tu teléfono, abre el enlace directamente en <strong>Chrome (Android)</strong> o <strong>Safari (iPhone)</strong>.</p>
-                    <button type="button" onclick="copyAppUrl()" class="cursor-pointer w-full py-2 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400">
-                        Copiar enlace de la app
-                    </button>
+                <!-- Lista de Transacciones -->
+                <div id="transactions-list" class="space-y-2.5">
+                    <!-- Los ítems se renderizan dinámicamente aquí -->
                 </div>
-                <div id="install-guide-ios" class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
-                    <p class="font-semibold text-white">iPhone / iPad (Safari iOS):</p>
-                    <ol class="list-decimal list-inside space-y-1 text-zinc-400">
-                        <li>Toca el icono <strong>Compartir</strong> (cuadrado con flecha hacia arriba) en Safari.</li>
-                        <li>Desliza y selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
-                        <li>Toca <strong>"Añadir"</strong> arriba a la derecha.</li>
-                    </ol>
-                </div>
-                <div id="install-guide-android" class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
-                    <p class="font-semibold text-white">Android (Google Chrome):</p>
-                    <ol class="list-decimal list-inside space-y-1 text-zinc-400">
-                        <li>Toca los <strong>3 puntos (⋮)</strong> en la esquina superior derecha de Chrome.</li>
-                        <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.</li>
-                        <li>Confirma tocando <strong>"Instalar"</strong>.</li>
-                    </ol>
-                </div>
-            </div>
 
-            <button onclick="closeInstallModal()" class="cursor-pointer mt-5 w-full py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-zinc-200">Entendido</button>
-        </div>
+                <!-- Estado Vacío -->
+                <div id="empty-state" class="hidden bg-carddark border border-borderdark rounded-2xl p-8 text-center space-y-2">
+                    <p class="text-sm font-medium text-neutral-300">No hay movimientos registrados</p>
+                    <p class="text-xs text-neutral-500">Agrega tu primer ingreso o gasto en pesos chilenos arriba.</p>
+                </div>
+            </section>
+
+        </main>
     </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL 5: CONFIRMACIÓN LIMPIAR DATOS        -->
-    <!-- ========================================== -->
-    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-        <div class="oled-card-elevated rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-slide-up text-center">
-            <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto mb-3">
-                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-            </div>
-            <h3 class="font-bold text-base text-white">¿Eliminar todos los registros?</h3>
-            <p class="text-xs text-zinc-400 mt-1">Se borrarán todos los movimientos de tu cuenta actual o dispositivo.</p>
-            <div class="mt-5 flex gap-2">
-                <button onclick="closeConfirmModal()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-medium bg-oled border border-zinc-800 text-zinc-300">Cancelar</button>
-                <button onclick="executeClearAll()" class="cursor-pointer flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 text-white">Sí, eliminar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NOTIFICACIÓN TOAST -->
-    <div id="toast" class="fixed bottom-20 md:bottom-6 right-4 md:right-8 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 bg-white text-black px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
-        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
-        <span id="toast-msg">Operación realizada</span>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- LÓGICA DE APLICACIÓN + FIREBASE ES MODULES -->
-    <!-- ========================================== -->
+    <!-- Lógica Firebase Auth, Firestore y UI -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import {
-            getAuth,
-            onAuthStateChanged,
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithCustomToken, 
+            signInAnonymously,
             signInWithEmailAndPassword,
             createUserWithEmailAndPassword,
+            updateProfile,
             GoogleAuthProvider,
             signInWithPopup,
-            signInWithRedirect,
-            getRedirectResult,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-        import {
-            getFirestore,
-            collection,
-            doc,
-            setDoc,
-            deleteDoc,
-            onSnapshot,
-            writeBatch,
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+            signOut,
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            addDoc, 
+            deleteDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
-        // 1. GESTIÓN DE INSTALACIÓN NATIVA PWA
+        // 1. CONFIGURACIÓN E INICIALIZACIÓN FIREBASE
         // ==========================================
-        window.addEventListener('appinstalled', () => {
-            window.__deferredInstallPrompt = null;
-            showToast('¡NovaFinance instalada en tu dispositivo!');
-        });
-
-        window.handleInstallClick = async () => {
-            const promptEvent = window.__deferredInstallPrompt;
-            if (promptEvent) {
-                promptEvent.prompt();
-                const { outcome } = await promptEvent.userChoice;
-                if (outcome === 'accepted') {
-                    showToast('Instalando NovaFinance...');
-                }
-                window.__deferredInstallPrompt = null;
-            } else {
-                const isInIframe = window.self !== window.top;
-                const ua = navigator.userAgent || '';
-                const isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|Line|TikTok/i.test(ua);
-                const warnEl = document.getElementById('pwa-env-warning');
-                if (warnEl) {
-                    warnEl.classList.toggle('hidden', !(isInIframe || isInAppBrowser));
-                }
-                document.getElementById('install-modal').classList.remove('hidden');
-                document.getElementById('install-modal').classList.add('flex');
-            }
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'billetera-clp-pwa';
+        
+        // Configuración compatible con entorno integrado y despliegue externo (Vercel / GitHub Pages)
+        const defaultExternalConfig = {
+            apiKey: "AIzaSyDemoPlaceholderKeyParaDespliegue",
+            authDomain: "billetera-clp.firebaseapp.com",
+            projectId: "billetera-clp",
+            storageBucket: "billetera-clp.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "1:000000000000:web:0000000000000000"
         };
 
-        window.copyAppUrl = () => {
-            const url = window.location.href;
-            const tempInput = document.createElement('input');
-            tempInput.value = url;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            showToast('Enlace copiado: pégalo en Chrome o Safari');
-        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : defaultExternalConfig;
 
-        window.closeInstallModal = () => {
-            document.getElementById('install-modal').classList.add('hidden');
-            document.getElementById('install-modal').classList.remove('flex');
-        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
         // ==========================================
-        // 2. ESTADO GLOBAL Y FORMATO PESOS CHILENOS
+        // 2. ESTADO DE LA APLICACIÓN
         // ==========================================
-        const LOCAL_STORAGE_KEY = 'novafinance_clp_oled_v1';
-        const FB_CONFIG_KEY = 'novafinance_firebase_config_v1';
-
-        const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyDUSeyVhrM9BzosT3m9Dinw-m_WewmIPAQ",
-            authDomain: "finanzas-70336.firebaseapp.com",
-            projectId: "finanzas-70336",
-            storageBucket: "finanzas-70336.firebasestorage.app",
-            messagingSenderId: "393200485089",
-            appId: "1:393200485089:web:405cafa5a2b4fd4e282da0"
-        };
-
-        let transactions = [];
-        let currentFilter = 'all';
-        let currentTxType = 'expense';
-        let authMode = 'login';
         let currentUser = null;
-        let firebaseApp = null;
-        let auth = null;
-        let db = null;
+        let transactions = [];
         let unsubscribeSnapshot = null;
-        let cashflowChartInstance = null;
-        let categoryChartInstance = null;
+        let currentTxType = 'expense'; // 'expense' | 'income'
+        let currentFilter = 'all'; // 'all' | 'income' | 'expense'
+        let authMode = 'login'; // 'login' | 'register'
+        let pendingDeleteId = null;
+        let deferredPrompt = null;
 
+        // ==========================================
+        // 3. FORMATEO DE MONEDA (PESOS CHILENOS - CLP)
+        // ==========================================
         const clpFormatter = new Intl.NumberFormat('es-CL', {
             style: 'currency',
             currency: 'CLP',
+            minimumFractionDigits: 0,
             maximumFractionDigits: 0
         });
 
-        function formatCLP(amount) {
-            return clpFormatter.format(Math.round(Number(amount) || 0));
+        function formatCLP(amount, showSign = false) {
+            const num = Math.round(Number(amount) || 0);
+            const absFormatted = clpFormatter.format(Math.abs(num));
+            if (num < 0) return `-${absFormatted}`;
+            if (showSign && num > 0) return `+${absFormatted}`;
+            return absFormatted;
         }
 
-        const categoryMeta = {
-            'Sueldo': { icon: 'briefcase', color: '#10b981' },
-            'Ventas/Proyectos': { icon: 'sparkles', color: '#34d399' },
-            'Inversiones': { icon: 'trending-up', color: '#06b6d4' },
-            'Arriendo/Dividendo': { icon: 'home', color: '#6366f1' },
-            'Supermercado': { icon: 'shopping-cart', color: '#f59e0b' },
-            'Cuentas/Servicios': { icon: 'zap', color: '#8b5cf6' },
-            'Transporte': { icon: 'car', color: '#3b82f6' },
-            'Salud': { icon: 'heart-pulse', color: '#ec4899' },
-            'Ocio': { icon: 'coffee', color: '#f97316' },
-            'Otros': { icon: 'circle-dot', color: '#71717a' }
-        };
-
-        function getDemoTransactions() {
-            const today = new Date();
-            const fmt = (daysAgo) => {
-                const d = new Date(today);
-                d.setDate(d.getDate() - daysAgo);
-                return d.toISOString().split('T')[0];
-            };
-            return [
-                { id: 'demo-1', type: 'income', amount: 1850000, title: 'Sueldo Líquido Mensual', category: 'Sueldo', date: fmt(12) },
-                { id: 'demo-2', type: 'expense', amount: 520000, title: 'Arriendo Departamento', category: 'Arriendo/Dividendo', date: fmt(10) },
-                { id: 'demo-3', type: 'expense', amount: 145000, title: 'Compra Mensual Supermercado', category: 'Supermercado', date: fmt(7) },
-                { id: 'demo-4', type: 'income', amount: 320000, title: 'Proyecto Freelance Diseño', category: 'Ventas/Proyectos', date: fmt(5) },
-                { id: 'demo-5', type: 'expense', amount: 68500, title: 'Luz, Agua e Internet Fibra', category: 'Cuentas/Servicios', date: fmt(3) },
-                { id: 'demo-6', type: 'expense', amount: 42000, title: 'Carga Tarjeta Bip! y Bencina', category: 'Transporte', date: fmt(1) }
-            ];
+        function parseRawCLP(str) {
+            const digits = String(str).replace(/\D/g, '');
+            return digits ? parseInt(digits, 10) : 0;
         }
 
         // ==========================================
-        // 3. INICIALIZACIÓN FIREBASE Y SINCRONIZACIÓN
+        // 4. UTILIDADES UI (TOASTS Y MODALES)
         // ==========================================
-        function getResolvedFirebaseConfig() {
-            if (window.__firebase_config) {
-                return typeof window.__firebase_config === 'string'
-                    ? JSON.parse(window.__firebase_config)
-                    : window.__firebase_config;
-            }
-            const saved = localStorage.getItem(FB_CONFIG_KEY);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    if (parsed && parsed.apiKey && parsed.projectId) return parsed;
-                } catch {
-                    // Continuar hacia DEFAULT_FIREBASE_CONFIG
-                }
-            }
-            return DEFAULT_FIREBASE_CONFIG;
+        let toastTimeout = null;
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toast-container');
+            const box = document.getElementById('toast-box');
+            const msgEl = document.getElementById('toast-message');
+
+            msgEl.textContent = message;
+            box.className = `bg-cardelevated border ${isError ? 'border-coralclp text-coralclp' : 'border-borderdark text-white'} px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-3`;
+
+            container.classList.remove('opacity-0', 'translate-y-4');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                container.classList.add('opacity-0', 'translate-y-4');
+            }, 3200);
         }
 
-        function initFirebase() {
-            const config = getResolvedFirebaseConfig();
-            const missingNotice = document.getElementById('firebase-missing-notice');
-            const configTextarea = document.getElementById('firebase-config-input');
-
-            if (config && config.apiKey && config.projectId) {
-                if (configTextarea) configTextarea.value = JSON.stringify(config, null, 2);
-                if (missingNotice) missingNotice.classList.add('hidden');
-
-                try {
-                    firebaseApp = initializeApp(config);
-                    auth = getAuth(firebaseApp);
-                    db = getFirestore(firebaseApp);
-
-                    getRedirectResult(auth).catch((err) => {
-                        console.error('Error redirect auth:', err);
-                    });
-
-                    onAuthStateChanged(auth, async (user) => {
-                        currentUser = user;
-                        if (unsubscribeSnapshot) {
-                            unsubscribeSnapshot();
-                            unsubscribeSnapshot = null;
-                        }
-
-                        if (user) {
-                            await migrateLocalToCloudIfNeeded(user.uid);
-                            subscribeToUserTransactions(user.uid);
-                            closeAuthModal();
-                        } else {
-                            loadLocalTransactions();
-                            updateUI();
-                        }
-                        updateAuthUI();
-                    });
-                    return;
-                } catch (err) {
-                    console.error('Error inicializando Firebase:', err);
-                }
-            }
-
-            if (missingNotice) missingNotice.classList.remove('hidden');
-            loadLocalTransactions();
-            updateAuthUI();
-            updateUI();
+        function setTodayDate() {
+            const dateInput = document.getElementById('tx-date');
+            const now = new Date();
+            const offset = now.getTimezoneOffset();
+            const localDate = new Date(now.getTime() - (offset * 60 * 1000));
+            dateInput.value = localDate.toISOString().split('T')[0];
         }
 
-        async function migrateLocalToCloudIfNeeded(uid) {
+        // ==========================================
+        // 5. GESTIÓN DE AUTENTICACIÓN
+        // ==========================================
+        async function initAuth() {
             try {
-                const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (!stored) return;
-                const localItems = JSON.parse(stored);
-                if (!Array.isArray(localItems) || localItems.length === 0) return;
-
-                const colRef = collection(db, 'users', uid, 'transactions');
-                const existingSnap = await getDocs(colRef);
-                if (existingSnap.empty) {
-                    const batch = writeBatch(db);
-                    localItems.forEach((item) => {
-                        const id = String(item.id || Date.now() + Math.random());
-                        batch.set(doc(db, 'users', uid, 'transactions', id), {
-                            type: item.type,
-                            amount: Math.round(Number(item.amount)),
-                            title: item.title,
-                            category: item.category || 'Otros',
-                            date: item.date,
-                            updatedAt: Date.now()
-                        });
-                    });
-                    await batch.commit();
-                    showToast('Registros locales sincronizados con tu cuenta');
+                // Si existe token inicial del entorno, autenticar primero
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 }
-            } catch (err) {
-                console.error('Error migrando datos locales:', err);
+            } catch (error) {
+                console.error("Error en autenticación inicial:", error);
             }
-        }
 
-        // Escucha en tiempo real Firestore: users/{uid}/transactions
-        function subscribeToUserTransactions(uid) {
-            const colRef = collection(db, 'users', uid, 'transactions');
-            unsubscribeSnapshot = onSnapshot(colRef, (snapshot) => {
-                transactions = snapshot.docs.map(docSnap => ({
-                    id: docSnap.id,
-                    ...docSnap.data()
-                }));
-                updateUI();
-            }, (error) => {
-                console.error("Error Firestore onSnapshot:", error);
-                if (error.code === 'permission-denied') {
-                    showToast("Permiso denegado en Firestore: revisa las reglas de seguridad");
+            onAuthStateChanged(auth, (user) => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                if (user) {
+                    currentUser = user;
+                    showAppScreen(user);
+                    subscribeToTransactions(user.uid);
                 } else {
-                    showToast("Error de sincronización con Firestore");
+                    currentUser = null;
+                    if (unsubscribeSnapshot) {
+                        unsubscribeSnapshot();
+                        unsubscribeSnapshot = null;
+                    }
+                    transactions = [];
+                    showAuthScreen();
                 }
             });
         }
 
-        function loadLocalTransactions() {
-            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (stored) {
-                try {
-                    transactions = JSON.parse(stored);
-                } catch {
-                    transactions = getDemoTransactions();
-                }
-            } else {
-                transactions = getDemoTransactions();
-                saveLocalTransactions();
-            }
+        function showAuthScreen() {
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
         }
 
-        function saveLocalTransactions() {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(transactions));
+        function showAppScreen(user) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            
+            const displayLabel = user.displayName || user.email || (user.isAnonymous ? 'Cuenta Personal Invitada' : 'Usuario');
+            document.getElementById('user-display').textContent = displayLabel;
+            setTodayDate();
         }
 
-        function updateAuthUI() {
-            const avatarEl = document.getElementById('user-avatar');
-            const emailEl = document.getElementById('session-email');
-            const statusTextEl = document.getElementById('sync-status-text');
-            const dotMobEl = document.getElementById('sync-dot-mobile');
-            const logoutBtn = document.getElementById('logout-btn');
-            const banner = document.getElementById('local-warning-banner');
-            const loggedInView = document.getElementById('auth-logged-in-view');
-            const formView = document.getElementById('auth-form-view');
+        // Alternar pestañas Login / Registro
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const nameFieldContainer = document.getElementById('name-field-container');
+        const authSubmitBtn = document.getElementById('auth-submit-btn');
 
-            if (currentUser) {
-                const email = currentUser.email || 'Usuario Conectado';
-                const initial = email.charAt(0).toUpperCase();
+        tabLogin.addEventListener('click', () => {
+            authMode = 'login';
+            tabLogin.className = 'cursor-pointer py-2 text-sm font-semibold rounded-lg bg-cardelevated text-white transition-colors';
+            tabRegister.className = 'cursor-pointer py-2 text-sm font-semibold rounded-lg text-neutral-400 hover:text-white transition-colors';
+            nameFieldContainer.classList.add('hidden');
+            authSubmitBtn.textContent = 'Entrar a mi cuenta';
+        });
 
-                avatarEl.textContent = initial;
-                avatarEl.className = 'w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase';
-                emailEl.textContent = email;
-                statusTextEl.className = 'flex items-center gap-1 text-[10px] text-emerald-400 leading-tight';
-                statusTextEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Sincronizado en la nube`;
-                dotMobEl.className = 'sm:hidden w-2 h-2 rounded-full bg-emerald-400';
+        tabRegister.addEventListener('click', () => {
+            authMode = 'register';
+            tabRegister.className = 'cursor-pointer py-2 text-sm font-semibold rounded-lg bg-cardelevated text-white transition-colors';
+            tabLogin.className = 'cursor-pointer py-2 text-sm font-semibold rounded-lg text-neutral-400 hover:text-white transition-colors';
+            nameFieldContainer.classList.remove('hidden');
+            authSubmitBtn.textContent = 'Crear cuenta personal';
+        });
 
-                logoutBtn.classList.remove('hidden');
-                banner.classList.add('hidden');
-                loggedInView.classList.remove('hidden');
-                formView.classList.add('hidden');
-
-                document.getElementById('profile-big-avatar').textContent = initial;
-                document.getElementById('profile-email-display').textContent = email;
-            } else {
-                avatarEl.innerHTML = `<i data-lucide="user" class="w-3 h-3"></i>`;
-                avatarEl.className = 'w-6 h-6 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-[10px] font-bold';
-                emailEl.textContent = 'Iniciar Sesión';
-                statusTextEl.className = 'flex items-center gap-1 text-[10px] text-amber-400 leading-tight';
-                statusTextEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Modo Local`;
-                dotMobEl.className = 'sm:hidden w-2 h-2 rounded-full bg-amber-400';
-
-                logoutBtn.classList.add('hidden');
-                banner.classList.remove('hidden');
-                loggedInView.classList.add('hidden');
-                formView.classList.remove('hidden');
-            }
-            lucide.createIcons();
-        }
-
-        // ==========================================
-        // 4. ACCIONES DE AUTENTICACIÓN Y CONFIG
-        // ==========================================
-        window.openAuthModal = () => {
-            document.getElementById('auth-error-msg').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-modal').classList.add('flex');
-        };
-
-        window.closeAuthModal = () => {
-            document.getElementById('auth-modal').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('flex');
-        };
-
-        window.setAuthMode = (mode) => {
-            authMode = mode;
-            const tabLogin = document.getElementById('auth-tab-login');
-            const tabReg = document.getElementById('auth-tab-register');
-            const submitBtn = document.getElementById('auth-submit-btn');
-
-            if (mode === 'login') {
-                tabLogin.className = 'cursor-pointer py-1.5 rounded-lg font-semibold bg-elevated text-white border border-zinc-700';
-                tabReg.className = 'cursor-pointer py-1.5 rounded-lg font-medium text-zinc-400 hover:text-white';
-                submitBtn.textContent = 'Iniciar Sesión';
-            } else {
-                tabReg.className = 'cursor-pointer py-1.5 rounded-lg font-semibold bg-elevated text-white border border-zinc-700';
-                tabLogin.className = 'cursor-pointer py-1.5 rounded-lg font-medium text-zinc-400 hover:text-white';
-                submitBtn.textContent = 'Crear Cuenta y Sincronizar';
-            }
-        };
-
-        window.handleEmailAuth = async (e) => {
+        // Envío formulario Correo / Contraseña
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!auth) {
-                openFirebaseConfigModal();
-                return;
-            }
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
-            const errEl = document.getElementById('auth-error-msg');
-            errEl.classList.add('hidden');
+            const name = document.getElementById('auth-name').value.trim();
+
+            authSubmitBtn.disabled = true;
+            authSubmitBtn.textContent = 'Procesando...';
 
             try {
                 if (authMode === 'login') {
                     await signInWithEmailAndPassword(auth, email, password);
                     showToast('Sesión iniciada correctamente');
                 } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    showToast('Cuenta creada y sincronizada');
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    if (name) {
+                        await updateProfile(cred.user, { displayName: name });
+                        document.getElementById('user-display').textContent = name;
+                    }
+                    showToast('Cuenta creada con éxito');
                 }
-            } catch (err) {
-                errEl.textContent = translateFirebaseError(err.code);
-                errEl.classList.remove('hidden');
+            } catch (error) {
+                let msg = 'Error de autenticación. Verifica tus datos.';
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    msg = 'Correo o contraseña incorrectos.';
+                } else if (error.code === 'auth/email-already-in-use') {
+                    msg = 'Este correo ya está registrado.';
+                } else if (error.code === 'auth/weak-password') {
+                    msg = 'La contraseña debe tener al menos 6 caracteres.';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    msg = 'Método no habilitado en Firebase. Usa el acceso rápido o Google.';
+                }
+                showToast(msg, true);
+            } finally {
+                authSubmitBtn.disabled = false;
+                authSubmitBtn.textContent = authMode === 'login' ? 'Entrar a mi cuenta' : 'Crear cuenta personal';
             }
-        };
+        });
 
-        window.handleGoogleSignIn = async () => {
-            if (!auth) {
-                openFirebaseConfigModal();
-                return;
-            }
+        // Inicio de sesión con Google
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
             const provider = new GoogleAuthProvider();
-            const errEl = document.getElementById('auth-error-msg');
-            errEl.classList.add('hidden');
-
             try {
                 await signInWithPopup(auth, provider);
                 showToast('Conectado con Google');
-            } catch (err) {
-                if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
-                    await signInWithRedirect(auth, provider);
-                } else {
-                    errEl.textContent = translateFirebaseError(err.code);
-                    errEl.classList.remove('hidden');
+            } catch (error) {
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    showToast('No se pudo iniciar con Google en este entorno. Usa correo o acceso rápido.', true);
                 }
             }
-        };
+        });
 
-        window.handleSignOut = async () => {
-            if (!auth) return;
-            await signOut(auth);
-            showToast('Sesión cerrada');
-        };
+        // Acceso rápido anónimo sincronizado
+        document.getElementById('guest-login-btn').addEventListener('click', async () => {
+            try {
+                await signInAnonymously(auth);
+                showToast('Sesión personal iniciada');
+            } catch (error) {
+                showToast('Error al iniciar sesión rápida.', true);
+            }
+        });
 
-        function translateFirebaseError(code) {
-            const map = {
-                'auth/invalid-credential': 'Correo o contraseña incorrectos.',
-                'auth/user-not-found': 'No existe una cuenta con este correo.',
-                'auth/wrong-password': 'Contraseña incorrecta.',
-                'auth/email-already-in-use': 'Este correo ya está registrado. Inicia sesión.',
-                'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-                'auth/invalid-email': 'El formato del correo electrónico no es válido.',
-                'auth/popup-closed-by-user': 'Ventana de Google cerrada antes de completar.',
-                'auth/operation-not-allowed': 'Activa este método de acceso en Firebase Console > Authentication > Sign-in method.',
-                'auth/unauthorized-domain': 'Agrega este dominio en Firebase Console > Authentication > Settings > Dominios autorizados.'
-            };
-            return map[code] || `Error de autenticación (${code || 'desconocido'})`;
+        // Cerrar sesión
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showToast('Sesión cerrada');
+            } catch (error) {
+                showToast('Error al cerrar sesión', true);
+            }
+        });
+
+        // ==========================================
+        // 6. SINCRONIZACIÓN EN TIEMPO REAL (FIRESTORE)
+        // ==========================================
+        function subscribeToTransactions(userId) {
+            if (!userId) return;
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+            // Ruta privada estricta por usuario: /artifacts/{appId}/users/{userId}/transactions
+            const txCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'transactions');
+
+            unsubscribeSnapshot = onSnapshot(txCollectionRef, (snapshot) => {
+                const items = [];
+                snapshot.forEach((docSnap) => {
+                    items.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                // Orden cronológico inverso en memoria (más recientes primero)
+                items.sort((a, b) => {
+                    if (b.date !== a.date) {
+                        return b.date.localeCompare(a.date);
+                    }
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
+
+                transactions = items;
+                updateSummary();
+                renderTransactions();
+            }, (error) => {
+                console.error("Error leyendo transacciones de Firestore:", error);
+                showToast('Error de sincronización con la nube.', true);
+            });
         }
 
-        // Configurador Visual de Firebase
-        window.openFirebaseConfigModal = () => {
-            closeAuthModal();
-            document.getElementById('config-error-msg').classList.add('hidden');
-            document.getElementById('firebase-config-modal').classList.remove('hidden');
-            document.getElementById('firebase-config-modal').classList.add('flex');
-        };
-
-        window.closeFirebaseConfigModal = () => {
-            document.getElementById('firebase-config-modal').classList.add('hidden');
-            document.getElementById('firebase-config-modal').classList.remove('flex');
-        };
-
-        window.saveFirebaseConfig = () => {
-            const raw = document.getElementById('firebase-config-input').value.trim();
-            const errEl = document.getElementById('config-error-msg');
-            errEl.classList.add('hidden');
-
-            try {
-                // Extraer objeto incluso si el usuario pega "const firebaseConfig = { ... };"
-                const firstBrace = raw.indexOf('{');
-                const lastBrace = raw.lastIndexOf('}');
-                if (firstBrace === -1 || lastBrace === -1) throw new Error('Formato inválido');
-
-                let jsonCandidate = raw.slice(firstBrace, lastBrace + 1);
-                // Convertir claves JS sin comillas a JSON válido si es necesario
-                jsonCandidate = jsonCandidate.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":');
-                const parsed = JSON.parse(jsonCandidate);
-
-                if (!parsed.apiKey || !parsed.projectId) {
-                    throw new Error('Faltan campos apiKey o projectId');
-                }
-
-                localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(parsed));
-                closeFirebaseConfigModal();
-                showToast('Configuración guardada. Recargando...');
-                setTimeout(() => window.location.reload(), 600);
-            } catch (e) {
-                errEl.textContent = 'No se pudo leer la configuración. Asegúrate de pegar el objeto { apiKey, authDomain, projectId... }.';
-                errEl.classList.remove('hidden');
-            }
-        };
-
-        window.clearFirebaseConfig = () => {
-            localStorage.removeItem(FB_CONFIG_KEY);
-            showToast('Configuración eliminada');
-            setTimeout(() => window.location.reload(), 500);
-        };
-
         // ==========================================
-        // 5. CRUD MOVIMIENTOS (CLOUD FIRESTORE / LOCAL)
+        // 7. FORMULARIO Y OPERACIONES CRUD
         // ==========================================
-        window.openNewModal = () => {
-            document.getElementById('transaction-form').reset();
-            document.getElementById('edit-id').value = '';
-            document.getElementById('modal-title').textContent = 'Nuevo Movimiento';
-            document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
-            setTransactionType('expense');
+        const typeExpenseBtn = document.getElementById('type-expense-btn');
+        const typeIncomeBtn = document.getElementById('type-income-btn');
+        const categorySelect = document.getElementById('tx-category');
 
-            const modal = document.getElementById('transaction-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        };
-
-        window.closeNewModal = () => {
-            document.getElementById('transaction-modal').classList.add('hidden');
-            document.getElementById('transaction-modal').classList.remove('flex');
-        };
-
-        window.setTransactionType = (type) => {
+        function setTransactionType(type) {
             currentTxType = type;
-            const btnExp = document.getElementById('type-btn-expense');
-            const btnInc = document.getElementById('type-btn-income');
-
             if (type === 'expense') {
-                btnExp.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-rose-600 text-white transition-all';
-                btnInc.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-all';
+                typeExpenseBtn.className = 'cursor-pointer py-2.5 rounded-lg text-sm font-semibold bg-coralclp text-white transition-colors';
+                typeIncomeBtn.className = 'cursor-pointer py-2.5 rounded-lg text-sm font-semibold text-neutral-400 hover:text-white transition-colors';
+                if (categorySelect.value === 'Sueldo') categorySelect.value = 'Alimentación';
             } else {
-                btnInc.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-emerald-600 text-white transition-all';
-                btnExp.className = 'cursor-pointer py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-all';
+                typeIncomeBtn.className = 'cursor-pointer py-2.5 rounded-lg text-sm font-semibold bg-emeraldclp text-black transition-colors';
+                typeExpenseBtn.className = 'cursor-pointer py-2.5 rounded-lg text-sm font-semibold text-neutral-400 hover:text-white transition-colors';
+                categorySelect.value = 'Sueldo';
             }
-        };
+        }
 
-        window.saveTransaction = async (e) => {
+        typeExpenseBtn.addEventListener('click', () => setTransactionType('expense'));
+        typeIncomeBtn.addEventListener('click', () => setTransactionType('income'));
+
+        // Formateo automático en tiempo real del input numérico CLP (ej: 15000 -> 15.000)
+        const txAmountInput = document.getElementById('tx-amount');
+        txAmountInput.addEventListener('input', (e) => {
+            const rawValue = parseRawCLP(e.target.value);
+            if (rawValue === 0) {
+                e.target.value = '';
+            } else {
+                e.target.value = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(rawValue);
+            }
+        });
+
+        // Guardar movimiento
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const existingId = document.getElementById('edit-id').value;
-            const amount = Math.round(parseFloat(document.getElementById('tx-amount').value));
-            const title = document.getElementById('tx-title').value.trim();
-            const category = document.getElementById('tx-category').value;
+            if (!currentUser) return;
+
+            const amount = parseRawCLP(txAmountInput.value);
+            const description = document.getElementById('tx-description').value.trim();
+            const category = categorySelect.value;
             const date = document.getElementById('tx-date').value;
 
-            if (!amount || amount <= 0 || !title || !date) return;
-
-            const txId = existingId || Date.now().toString();
-            const txData = {
-                type: currentTxType,
-                amount,
-                title,
-                category,
-                date,
-                updatedAt: Date.now()
-            };
-
-            if (currentUser && db) {
-                try {
-                    await setDoc(doc(db, 'users', currentUser.uid, 'transactions', txId), txData);
-                    showToast(existingId ? 'Actualizado en la nube' : 'Guardado en la nube');
-                } catch (err) {
-                    console.error(err);
-                    showToast('Error al guardar en Firestore');
-                }
-            } else {
-                if (existingId) {
-                    const idx = transactions.findIndex(t => t.id === existingId);
-                    if (idx !== -1) transactions[idx] = { id: existingId, ...txData };
-                    showToast('Movimiento actualizado');
-                } else {
-                    transactions.unshift({ id: txId, ...txData });
-                    showToast(currentTxType === 'income' ? 'Ingreso registrado' : 'Gasto registrado');
-                }
-                saveLocalTransactions();
-                updateUI();
-            }
-
-            closeNewModal();
-        };
-
-        window.editTransaction = (id) => {
-            const tx = transactions.find(t => t.id === id);
-            if (!tx) return;
-
-            openNewModal();
-            document.getElementById('modal-title').textContent = 'Editar Movimiento';
-            document.getElementById('edit-id').value = tx.id;
-            document.getElementById('tx-amount').value = Math.round(tx.amount);
-            document.getElementById('tx-title').value = tx.title;
-            document.getElementById('tx-category').value = tx.category;
-            document.getElementById('tx-date').value = tx.date;
-            setTransactionType(tx.type);
-        };
-
-        window.deleteTransaction = async (id) => {
-            if (currentUser && db) {
-                try {
-                    await deleteDoc(doc(db, 'users', currentUser.uid, 'transactions', id));
-                    showToast('Eliminado de la nube');
-                } catch (err) {
-                    showToast('Error al eliminar');
-                }
-            } else {
-                transactions = transactions.filter(t => t.id !== id);
-                saveLocalTransactions();
-                updateUI();
-                showToast('Registro eliminado');
-            }
-        };
-
-        // ==========================================
-        // 6. ACTUALIZACIÓN UI, GRÁFICOS Y FILTROS
-        // ==========================================
-        function updateUI() {
-            const totalIncome = transactions
-                .filter(t => t.type === 'income')
-                .reduce((acc, t) => acc + Math.round(Number(t.amount)), 0);
-
-            const totalExpense = transactions
-                .filter(t => t.type === 'expense')
-                .reduce((acc, t) => acc + Math.round(Number(t.amount)), 0);
-
-            const balance = totalIncome - totalExpense;
-
-            document.getElementById('total-balance').textContent = formatCLP(balance);
-            document.getElementById('total-income').textContent = formatCLP(totalIncome);
-            document.getElementById('total-expense').textContent = formatCLP(totalExpense);
-
-            const incCount = transactions.filter(t => t.type === 'income').length;
-            const expCount = transactions.filter(t => t.type === 'expense').length;
-            document.getElementById('income-count').textContent = `${incCount} ingreso${incCount !== 1 ? 's' : ''} registrado${incCount !== 1 ? 's' : ''}`;
-            document.getElementById('expense-count').textContent = `${expCount} gasto${expCount !== 1 ? 's' : ''} registrado${expCount !== 1 ? 's' : ''}`;
-
-            // Tasa de ahorro y estado financiero
-            const badge = document.getElementById('health-badge');
-            const progressBar = document.getElementById('savings-progress-bar');
-            const rateText = document.getElementById('savings-rate-text');
-
-            let savingsRate = 0;
-            if (totalIncome > 0) {
-                savingsRate = Math.max(0, Math.min(100, Math.round(((totalIncome - totalExpense) / totalIncome) * 100)));
-            }
-
-            rateText.textContent = `${savingsRate}%`;
-            progressBar.style.width = `${savingsRate}%`;
-
-            if (balance < 0) {
-                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shrink-0';
-                badge.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i><span>Déficit</span>`;
-            } else if (savingsRate >= 20) {
-                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shrink-0';
-                badge.innerHTML = `<i data-lucide="shield-check" class="w-3.5 h-3.5"></i><span>Óptimo</span>`;
-            } else {
-                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shrink-0';
-                badge.innerHTML = `<i data-lucide="activity" class="w-3.5 h-3.5"></i><span>Equilibrado</span>`;
-            }
-
-            renderTransactions();
-            renderCharts();
-            lucide.createIcons();
-        }
-
-        window.setFilter = (filter) => {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-pill').forEach(btn => {
-                btn.className = 'filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-medium text-zinc-400 hover:text-white transition-all';
-            });
-            const active = document.getElementById(`filter-${filter}`);
-            active.className = 'filter-pill cursor-pointer px-2.5 py-1 rounded-lg font-semibold bg-elevated text-white border border-zinc-700 transition-all';
-            renderTransactions();
-        };
-
-        window.renderTransactions = () => {
-            const listEl = document.getElementById('transactions-list');
-            const query = document.getElementById('search-input').value.toLowerCase().trim();
-
-            const filtered = transactions
-                .filter(t => currentFilter === 'all' || t.type === currentFilter)
-                .filter(t => t.title.toLowerCase().includes(query) || t.category.toLowerCase().includes(query))
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            document.getElementById('showing-count').textContent = `Mostrando ${filtered.length} movimiento${filtered.length !== 1 ? 's' : ''}`;
-
-            if (filtered.length === 0) {
-                listEl.innerHTML = `
-                    <div class="py-12 text-center space-y-2">
-                        <div class="w-12 h-12 rounded-2xl bg-elevated border border-zinc-800 text-zinc-500 flex items-center justify-center mx-auto">
-                            <i data-lucide="inbox" class="w-6 h-6"></i>
-                        </div>
-                        <p class="text-sm font-semibold text-zinc-300">No hay movimientos registrados</p>
-                        <p class="text-xs text-zinc-500">Pulsa "Nuevo Movimiento" para añadir un ingreso o gasto.</p>
-                    </div>
-                `;
-                lucide.createIcons();
+            if (amount <= 0) {
+                showToast('Ingresa un monto mayor a $0', true);
+                txAmountInput.focus();
                 return;
             }
 
+            if (!description) {
+                showToast('Ingresa una descripción', true);
+                return;
+            }
+
+            const saveBtn = document.getElementById('save-tx-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Guardando...';
+
+            try {
+                const txCollectionRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'transactions');
+                await addDoc(txCollectionRef, {
+                    type: currentTxType,
+                    amount: amount,
+                    description: description,
+                    category: category,
+                    date: date,
+                    createdAt: Date.now()
+                });
+
+                txAmountInput.value = '';
+                document.getElementById('tx-description').value = '';
+                showToast(`${currentTxType === 'income' ? 'Ingreso' : 'Gasto'} registrado: ${formatCLP(amount)}`);
+            } catch (error) {
+                console.error("Error guardando movimiento:", error);
+                showToast('No se pudo guardar el movimiento.', true);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Registrar Movimiento';
+            }
+        });
+
+        // Eliminación con modal de confirmación
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteModalDesc = document.getElementById('delete-modal-desc');
+
+        window.requestDeleteTransaction = function(id, desc, amount, type) {
+            pendingDeleteId = id;
+            const formatted = formatCLP(type === 'expense' ? -amount : amount);
+            deleteModalDesc.textContent = `¿Eliminar "${desc}" (${formatted})? Esta acción no se puede deshacer.`;
+            deleteModal.classList.remove('hidden');
+            deleteModal.classList.add('flex');
+        };
+
+        document.getElementById('cancel-delete-btn').addEventListener('click', () => {
+            pendingDeleteId = null;
+            deleteModal.classList.add('hidden');
+            deleteModal.classList.remove('flex');
+        });
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+            if (!currentUser || !pendingDeleteId) return;
+            const idToDelete = pendingDeleteId;
+            pendingDeleteId = null;
+            deleteModal.classList.add('hidden');
+            deleteModal.classList.remove('flex');
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'transactions', idToDelete);
+                await deleteDoc(docRef);
+                showToast('Movimiento eliminado');
+            } catch (error) {
+                console.error("Error eliminando movimiento:", error);
+                showToast('Error al eliminar el registro.', true);
+            }
+        });
+
+        // ==========================================
+        // 8. RENDERIZADO DE RESUMEN E HISTORIAL
+        // ==========================================
+        function updateSummary() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            for (const tx of transactions) {
+                if (tx.type === 'income') {
+                    totalIncome += Number(tx.amount) || 0;
+                } else {
+                    totalExpense += Number(tx.amount) || 0;
+                }
+            }
+
+            const balance = totalIncome - totalExpense;
+
+            const balanceEl = document.getElementById('balance-amount');
+            balanceEl.textContent = formatCLP(balance);
+            balanceEl.className = `text-3xl sm:text-4xl font-extrabold tracking-tight tabular-nums ${
+                balance < 0 ? 'text-coralclp' : 'text-white'
+            }`;
+
+            document.getElementById('income-amount').textContent = formatCLP(totalIncome);
+            document.getElementById('expense-amount').textContent = formatCLP(totalExpense);
+        }
+
+        function formatDisplayDate(isoDateStr) {
+            if (!isoDateStr) return '';
+            const parts = isoDateStr.split('-');
+            if (parts.length !== 3) return isoDateStr;
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const day = parseInt(parts[2], 10);
+            const monthIdx = parseInt(parts[1], 10) - 1;
+            return `${day} ${months[monthIdx] || parts[1]} ${parts[0]}`;
+        }
+
+        function renderTransactions() {
+            const listEl = document.getElementById('transactions-list');
+            const emptyEl = document.getElementById('empty-state');
+
+            const filtered = transactions.filter(tx => {
+                if (currentFilter === 'all') return true;
+                return tx.type === currentFilter;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
             listEl.innerHTML = filtered.map(tx => {
                 const isIncome = tx.type === 'income';
-                const meta = categoryMeta[tx.category] || { icon: 'circle-dot', color: '#6366f1' };
-                const formattedDate = new Date(tx.date + 'T00:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+                const signedAmount = isIncome ? formatCLP(tx.amount, true) : formatCLP(-tx.amount);
+                const amountColor = isIncome ? 'text-emeraldclp' : 'text-coralclp';
+                const safeDesc = escapeHTML(tx.description);
+                const safeCat = escapeHTML(tx.category || 'Otros');
 
                 return `
-                    <div class="py-3.5 flex items-center justify-between gap-3 group hover:bg-zinc-900/50 -mx-2 px-2 rounded-xl transition-colors">
-                        <div class="flex items-center gap-3.5 min-w-0">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-zinc-800" style="background-color: ${meta.color}18; color: ${meta.color}">
-                                <i data-lucide="${meta.icon}" class="w-5 h-5"></i>
+                    <div class="bg-carddark border border-borderdark rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-neutral-700 transition-colors">
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full shrink-0 ${isIncome ? 'bg-emeraldclp' : 'bg-coralclp'}"></span>
+                                <p class="text-sm font-semibold text-white truncate">${safeDesc}</p>
                             </div>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold truncate text-white">${escapeHTML(tx.title)}</p>
-                                <div class="flex items-center gap-2 text-xs text-zinc-400">
-                                    <span>${escapeHTML(tx.category)}</span>
-                                    <span>•</span>
-                                    <span>${formattedDate}</span>
-                                </div>
+                            <div class="flex items-center gap-2 text-xs text-neutral-400 pl-4">
+                                <span class="px-2 py-0.5 rounded-md bg-cardelevated border border-borderdark text-neutral-300 font-medium">${safeCat}</span>
+                                <span>•</span>
+                                <span>${formatDisplayDate(tx.date)}</span>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-3 shrink-0">
-                            <span class="text-sm sm:text-base font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
-                                ${isIncome ? '+' : '-'}${formatCLP(tx.amount)}
+                            <span class="text-sm sm:text-base font-bold tabular-nums ${amountColor}">
+                                ${signedAmount}
                             </span>
-                            <div class="flex items-center gap-1">
-                                <button onclick="editTransaction('${tx.id}')" title="Editar" class="cursor-pointer p-1.5 rounded-lg text-zinc-400 hover:text-indigo-400 hover:bg-zinc-800">
-                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="deleteTransaction('${tx.id}')" title="Eliminar" class="cursor-pointer p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
+                            <button 
+                                type="button" 
+                                onclick="requestDeleteTransaction('${tx.id}', '${safeDesc.replace(/'/g, "\\'")}', ${tx.amount}, '${tx.type}')"
+                                title="Eliminar movimiento"
+                                aria-label="Eliminar movimiento"
+                                class="cursor-pointer p-2 rounded-xl bg-cardelevated border border-borderdark text-neutral-400 hover:text-coralclp hover:border-neutral-600 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
-
-            lucide.createIcons();
-        };
+        }
 
         function escapeHTML(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
         }
 
-        function renderCharts() {
-            const textColor = '#a1a1aa';
-            const gridColor = '#18181b';
-
-            // 1. Flujo Mensual
-            const monthlyData = {};
-            transactions.forEach(tx => {
-                const monthKey = tx.date.substring(0, 7);
-                if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0 };
-                monthlyData[monthKey][tx.type] += Math.round(Number(tx.amount));
-            });
-
-            const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
-            const labels = sortedMonths.map(m => {
-                const [y, mo] = m.split('-');
-                return new Date(y, parseInt(mo) - 1, 1).toLocaleDateString('es-CL', { month: 'short', year: '2-digit' });
-            });
-
-            const incomeSeries = sortedMonths.map(m => monthlyData[m].income);
-            const expenseSeries = sortedMonths.map(m => monthlyData[m].expense);
-
-            const ctxBar = document.getElementById('cashflowChart').getContext('2d');
-            if (cashflowChartInstance) cashflowChartInstance.destroy();
-
-            cashflowChartInstance = new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: labels.length ? labels : ['Actual'],
-                    datasets: [
-                        {
-                            label: 'Ingresos',
-                            data: incomeSeries.length ? incomeSeries : [0],
-                            backgroundColor: '#10b981',
-                            borderRadius: 6,
-                            barPercentage: 0.55
-                        },
-                        {
-                            label: 'Gastos',
-                            data: expenseSeries.length ? expenseSeries : [0],
-                            backgroundColor: '#f43f5e',
-                            borderRadius: 6,
-                            barPercentage: 0.55
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            align: 'end',
-                            labels: { color: textColor, usePointStyle: true, boxWidth: 8, font: { family: 'Inter', size: 11 } }
-                        },
-                        tooltip: {
-                            backgroundColor: '#111113',
-                            borderColor: '#27272a',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: (ctx) => `${ctx.dataset.label}: ${formatCLP(ctx.parsed.y)}`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter', size: 11 } } },
-                        y: {
-                            grid: { color: gridColor },
-                            border: { display: false },
-                            ticks: {
-                                color: textColor,
-                                font: { family: 'Inter', size: 11 },
-                                callback: (val) => formatCLP(val)
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 2. Gastos por Categoría
-            const expenseByCat = {};
-            transactions.filter(t => t.type === 'expense').forEach(tx => {
-                expenseByCat[tx.category] = (expenseByCat[tx.category] || 0) + Math.round(Number(tx.amount));
-            });
-
-            const catLabels = Object.keys(expenseByCat);
-            const catValues = Object.values(expenseByCat);
-            const catColors = catLabels.map(c => (categoryMeta[c]?.color || '#6366f1'));
-
-            const ctxDoughnut = document.getElementById('categoryChart').getContext('2d');
-            const emptyMsg = document.getElementById('empty-chart-msg');
-
-            if (categoryChartInstance) categoryChartInstance.destroy();
-
-            if (catLabels.length === 0) {
-                emptyMsg.classList.remove('hidden');
-            } else {
-                emptyMsg.classList.add('hidden');
-                categoryChartInstance = new Chart(ctxDoughnut, {
-                    type: 'doughnut',
-                    data: {
-                        labels: catLabels,
-                        datasets: [{
-                            data: catValues,
-                            backgroundColor: catColors,
-                            borderColor: '#09090b',
-                            borderWidth: 2,
-                            hoverOffset: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '72%',
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: { color: textColor, usePointStyle: true, boxWidth: 8, padding: 12, font: { family: 'Inter', size: 11 } }
-                            },
-                            tooltip: {
-                                backgroundColor: '#111113',
-                                borderColor: '#27272a',
-                                borderWidth: 1,
-                                callbacks: {
-                                    label: (ctx) => `${ctx.label}: ${formatCLP(ctx.parsed)}`
-                                }
-                            }
-                        }
-                    }
+        // Filtros del historial
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilter = btn.dataset.filter;
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.className = 'filter-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white transition-colors';
                 });
-            }
-        }
-
-        // ==========================================
-        // 7. NAVEGACIÓN, EXPORTACIÓN CSV/JSON Y EXTRAS
-        // ==========================================
-        window.switchTab = (tab) => {
-            const summary = document.getElementById('section-summary');
-            const charts = document.getElementById('section-charts');
-            const txs = document.getElementById('section-transactions');
-
-            document.querySelectorAll('.nav-btn-desk').forEach(b => {
-                b.className = 'nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900/70 transition-all';
+                btn.className = 'filter-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold bg-cardelevated text-white transition-colors';
+                renderTransactions();
             });
-            const activeDesk = document.getElementById(`nav-desk-${tab}`);
-            if (activeDesk) {
-                activeDesk.className = 'nav-btn-desk cursor-pointer w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-zinc-900 text-white border border-zinc-800 transition-all';
-            }
-
-            document.querySelectorAll('.nav-btn-mob').forEach(b => {
-                b.className = 'nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-zinc-500';
-            });
-            const activeMob = document.getElementById(`nav-mob-${tab}`);
-            if (activeMob) {
-                activeMob.className = 'nav-btn-mob cursor-pointer flex flex-col items-center gap-1 p-1.5 text-indigo-400';
-            }
-
-            if (tab === 'dashboard') {
-                summary.classList.remove('hidden');
-                charts.classList.remove('hidden');
-                txs.classList.remove('hidden');
-                document.getElementById('page-title').textContent = 'Balance General';
-            } else if (tab === 'transactions') {
-                summary.classList.add('hidden');
-                charts.classList.add('hidden');
-                txs.classList.remove('hidden');
-                document.getElementById('page-title').textContent = 'Historial de Movimientos';
-            } else if (tab === 'analytics') {
-                summary.classList.remove('hidden');
-                charts.classList.remove('hidden');
-                txs.classList.add('hidden');
-                document.getElementById('page-title').textContent = 'Gráficos y Análisis';
-            }
-        };
-
-        window.exportCSV = () => {
-            if (transactions.length === 0) {
-                showToast('No hay movimientos para exportar');
-                return;
-            }
-            const headers = ['ID', 'Tipo', 'Monto_CLP', 'Monto_Formateado', 'Descripcion', 'Categoria', 'Fecha'];
-            const rows = transactions.map(t => [
-                t.id,
-                t.type === 'income' ? 'Ingreso' : 'Gasto',
-                Math.round(Number(t.amount)),
-                `"${formatCLP(t.amount)}"`,
-                `"${t.title.replace(/"/g, '""')}"`,
-                `"${t.category}"`,
-                t.date
-            ]);
-            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-            const link = document.createElement('a');
-            link.setAttribute('href', encodeURI(csvContent));
-            link.setAttribute('download', `NovaFinance_CLP_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('CSV descargado');
-        };
-
-        window.exportJSON = () => {
-            if (transactions.length === 0) {
-                showToast('No hay movimientos para respaldar');
-                return;
-            }
-            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(transactions, null, 2));
-            const link = document.createElement('a');
-            link.setAttribute('href', dataStr);
-            link.setAttribute('download', `NovaFinance_Respaldo_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('Respaldo JSON descargado');
-        };
-
-        window.importJSON = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (!Array.isArray(imported)) throw new Error('Formato inválido');
-
-                    if (currentUser && db) {
-                        const batch = writeBatch(db);
-                        imported.forEach(item => {
-                            if (item.title && item.amount && item.type && item.date) {
-                                const id = String(item.id || Date.now() + Math.random());
-                                batch.set(doc(db, 'users', currentUser.uid, 'transactions', id), {
-                                    type: item.type,
-                                    amount: Math.round(Number(item.amount)),
-                                    title: item.title,
-                                    category: item.category || 'Otros',
-                                    date: item.date,
-                                    updatedAt: Date.now()
-                                });
-                            }
-                        });
-                        await batch.commit();
-                        showToast('Respaldo restaurado en la nube');
-                    } else {
-                        transactions = imported;
-                        saveLocalTransactions();
-                        updateUI();
-                        showToast('Respaldo restaurado localmente');
-                    }
-                } catch {
-                    showToast('Archivo JSON no válido');
-                }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        };
-
-        window.loadDemoData = async () => {
-            const demos = getDemoTransactions();
-            if (currentUser && db) {
-                const batch = writeBatch(db);
-                demos.forEach(d => {
-                    batch.set(doc(db, 'users', currentUser.uid, 'transactions', d.id), d);
-                });
-                await batch.commit();
-                showToast('Ejemplos cargados en la nube');
-            } else {
-                transactions = demos;
-                saveLocalTransactions();
-                updateUI();
-                showToast('Datos de ejemplo restaurados');
-            }
-        };
-
-        window.confirmClearAll = () => {
-            document.getElementById('confirm-modal').classList.remove('hidden');
-            document.getElementById('confirm-modal').classList.add('flex');
-        };
-
-        window.closeConfirmModal = () => {
-            document.getElementById('confirm-modal').classList.add('hidden');
-            document.getElementById('confirm-modal').classList.remove('flex');
-        };
-
-        window.executeClearAll = async () => {
-            if (currentUser && db) {
-                const colRef = collection(db, 'users', currentUser.uid, 'transactions');
-                const snap = await getDocs(colRef);
-                const batch = writeBatch(db);
-                snap.docs.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-                showToast('Registros eliminados de la nube');
-            } else {
-                transactions = [];
-                saveLocalTransactions();
-                updateUI();
-                showToast('Registros eliminados');
-            }
-            closeConfirmModal();
-        };
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // Inicialización al cargar
-        window.addEventListener('DOMContentLoaded', () => {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const dateStr = new Date().toLocaleDateString('es-CL', options);
-            document.getElementById('current-date-label').textContent = `${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)} • Pesos Chilenos (CLP)`;
-            lucide.createIcons();
-            initFirebase();
         });
+
+        // ==========================================
+        // 9. SOPORTE DE INSTALACIÓN PWA EN UI
+        // ==========================================
+        const pwaModal = document.getElementById('pwa-modal');
+        const nativeInstallBtn = document.getElementById('native-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            nativeInstallBtn.classList.remove('hidden');
+        });
+
+        document.getElementById('open-pwa-btn').addEventListener('click', () => {
+            pwaModal.classList.remove('hidden');
+            pwaModal.classList.add('flex');
+        });
+
+        document.getElementById('close-pwa-modal').addEventListener('click', () => {
+            pwaModal.classList.add('hidden');
+            pwaModal.classList.remove('flex');
+        });
+
+        nativeInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showToast('Aplicación instalada en tu dispositivo');
+            }
+            deferredPrompt = null;
+            nativeInstallBtn.classList.add('hidden');
+            pwaModal.classList.add('hidden');
+            pwaModal.classList.remove('flex');
+        });
+
+        // Iniciar aplicación
+        initAuth();
     </script>
 </body>
 </html>
