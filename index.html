@@ -90,9 +90,33 @@
             const manifestDataUri = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
             const link = document.createElement('link');
             link.rel = 'manifest';
-            link.href = manifestDataUri;
+            try {
+                // Chrome en Android requiere un Blob URL same-origin para validar el manifest PWA
+                const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+                link.href = URL.createObjectURL(blob);
+            } catch (e) {
+                link.href = manifestDataUri;
+            }
             document.head.appendChild(link);
         })();
+
+        // Registrar Service Worker mínimo en el mismo origen (requisito obligatorio de Chrome Android para PWA)
+        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+                    });
+                `;
+                try {
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(swBlob);
+                    navigator.serviceWorker.register(swUrl).catch(() => {});
+                } catch (err) {}
+            });
+        }
     </script>
 
     <!-- Tailwind CSS -->
@@ -102,14 +126,10 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                    },
                     colors: {
                         oled: '#000000',
                         surface: '#09090b',
-                        elevated: '#111113',
-                        borderline: '#27272a'
+                        elevated: '#111113'
                     }
                 }
             }
@@ -709,22 +729,26 @@
             </div>
 
             <div class="space-y-3 text-xs text-zinc-300">
-                <div id="pwa-env-warning" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
-                    <strong>Nota:</strong> Estás viendo la app dentro de una vista previa embebida. Para que aparezca la opción nativa de instalar en el navegador, abre tu enlace publicado (Vercel / GitHub Pages) directamente en Chrome o Safari.
+                <div id="pwa-env-warning" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-2">
+                    <p><strong>Aviso importante:</strong> Estás abriendo la app desde una vista previa embebida o navegador interno. Para instalarla en tu teléfono, abre el enlace directamente en <strong>Chrome (Android)</strong> o <strong>Safari (iPhone)</strong>.</p>
+                    <button type="button" onclick="copyAppUrl()" class="cursor-pointer w-full py-2 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400">
+                        Copiar enlace de la app
+                    </button>
                 </div>
-                <div class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
+                <div id="install-guide-ios" class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
                     <p class="font-semibold text-white">iPhone / iPad (Safari iOS):</p>
                     <ol class="list-decimal list-inside space-y-1 text-zinc-400">
-                        <li>Toca el icono <strong>Compartir</strong> en la barra inferior de Safari.</li>
-                        <li>Selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
-                        <li>Toca <strong>"Añadir"</strong> en la esquina superior derecha.</li>
+                        <li>Toca el icono <strong>Compartir</strong> (cuadrado con flecha hacia arriba) en Safari.</li>
+                        <li>Desliza y selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
+                        <li>Toca <strong>"Añadir"</strong> arriba a la derecha.</li>
                     </ol>
                 </div>
-                <div class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
-                    <p class="font-semibold text-white">Android / Tablet / PC (Chrome / Edge):</p>
+                <div id="install-guide-android" class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
+                    <p class="font-semibold text-white">Android (Google Chrome):</p>
                     <ol class="list-decimal list-inside space-y-1 text-zinc-400">
-                        <li>Abre el menú del navegador (<strong>⋮</strong>) o el icono de instalación en la barra superior.</li>
-                        <li>Selecciona <strong>"Instalar aplicación"</strong>.</li>
+                        <li>Toca los <strong>3 puntos (⋮)</strong> en la esquina superior derecha de Chrome.</li>
+                        <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.</li>
+                        <li>Confirma tocando <strong>"Instalar"</strong>.</li>
                     </ol>
                 </div>
             </div>
@@ -802,13 +826,26 @@
                 window.__deferredInstallPrompt = null;
             } else {
                 const isInIframe = window.self !== window.top;
+                const ua = navigator.userAgent || '';
+                const isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|Line|TikTok/i.test(ua);
                 const warnEl = document.getElementById('pwa-env-warning');
                 if (warnEl) {
-                    warnEl.classList.toggle('hidden', !isInIframe);
+                    warnEl.classList.toggle('hidden', !(isInIframe || isInAppBrowser));
                 }
                 document.getElementById('install-modal').classList.remove('hidden');
                 document.getElementById('install-modal').classList.add('flex');
             }
+        };
+
+        window.copyAppUrl = () => {
+            const url = window.location.href;
+            const tempInput = document.createElement('input');
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Enlace copiado: pégalo en Chrome o Safari');
         };
 
         window.closeInstallModal = () => {
