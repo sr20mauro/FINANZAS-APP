@@ -12,8 +12,88 @@
     <meta name="apple-mobile-web-app-title" content="NovaFinance">
     <meta name="description" content="Gestión minimalista de finanzas personales en pesos chilenos (CLP) con sincronización por sesión en la nube.">
     
-    <!-- Icono Apple Touch en SVG Data URI -->
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Cpath d='M144 336V176l112 160V176M368 176v160' stroke='url(%23g)' stroke-width='44' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+    <!-- Icono Apple Touch y Manifest PWA nativo generados en PNG real desde <head> -->
+    <link id="apple-touch-icon-link" rel="apple-touch-icon" sizes="180x180" href="">
+    <script>
+        // Capturar el evento nativo de instalación lo antes posible
+        window.__deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.__deferredInstallPrompt = e;
+            const btn = document.getElementById('install-pwa-btn');
+            if (btn) btn.classList.add('ring-2', 'ring-emerald-400');
+        });
+
+        // Generar iconos PNG reales (192x192 y 512x512) y Manifest con rutas absolutas
+        (function initEarlyPWAManifest() {
+            function createPngIcon(size) {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // Fondo negro puro redondeado
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, size, size);
+
+                // Gradiente marca NovaFinance
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#6366f1');
+                grad.addColorStop(1, '#10b981');
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = Math.round(size * 0.086);
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                const s = size / 512;
+                ctx.beginPath();
+                ctx.moveTo(144 * s, 336 * s);
+                ctx.lineTo(144 * s, 176 * s);
+                ctx.lineTo(256 * s, 336 * s);
+                ctx.lineTo(256 * s, 176 * s);
+                ctx.moveTo(368 * s, 176 * s);
+                ctx.lineTo(368 * s, 336 * s);
+                ctx.stroke();
+
+                return canvas.toDataURL('image/png');
+            }
+
+            const icon180 = createPngIcon(180);
+            const icon192 = createPngIcon(192);
+            const icon512 = createPngIcon(512);
+
+            const appleLink = document.getElementById('apple-touch-icon-link');
+            if (appleLink) appleLink.href = icon180;
+
+            const appUrl = window.location.href.split('#')[0];
+            const manifest = {
+                id: appUrl,
+                name: "NovaFinance - Finanzas Personales CLP",
+                short_name: "NovaFinance",
+                description: "Gestión minimalista de ingresos, gastos y balance general en pesos chilenos.",
+                start_url: appUrl,
+                scope: appUrl.substring(0, appUrl.lastIndexOf('/') + 1),
+                display: "standalone",
+                display_override: ["standalone", "minimal-ui"],
+                background_color: "#000000",
+                theme_color: "#000000",
+                orientation: "portrait-primary",
+                icons: [
+                    { src: icon192, sizes: "192x192", type: "image/png", purpose: "any" },
+                    { src: icon192, sizes: "192x192", type: "image/png", purpose: "maskable" },
+                    { src: icon512, sizes: "512x512", type: "image/png", purpose: "any" },
+                    { src: icon512, sizes: "512x512", type: "image/png", purpose: "maskable" }
+                ]
+            };
+
+            const manifestDataUri = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestDataUri;
+            document.head.appendChild(link);
+        })();
+    </script>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -629,6 +709,9 @@
             </div>
 
             <div class="space-y-3 text-xs text-zinc-300">
+                <div id="pwa-env-warning" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
+                    <strong>Nota:</strong> Estás viendo la app dentro de una vista previa embebida. Para que aparezca la opción nativa de instalar en el navegador, abre tu enlace publicado (Vercel / GitHub Pages) directamente en Chrome o Safari.
+                </div>
                 <div class="p-3.5 rounded-2xl bg-oled border border-zinc-800 space-y-1.5">
                     <p class="font-semibold text-white">iPhone / iPad (Safari iOS):</p>
                     <ol class="list-decimal list-inside space-y-1 text-zinc-400">
@@ -701,59 +784,28 @@
         } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
         // ==========================================
-        // 1. CONFIGURACIÓN DINÁMICA PWA (MANIFEST + SW)
+        // 1. GESTIÓN DE INSTALACIÓN NATIVA PWA
         // ==========================================
-        (function setupPWA() {
-            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#10b981"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#000000"/><path d="M144 336V176l112 160V176M368 176v160" stroke="url(#g)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
-            const iconUrl = 'data:image/svg+xml;base64,' + btoa(svgIcon);
-
-            const manifest = {
-                name: "NovaFinance - Finanzas Personales CLP",
-                short_name: "NovaFinance",
-                description: "Gestión minimalista de ingresos, gastos y balance general en pesos chilenos.",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#000000",
-                theme_color: "#000000",
-                orientation: "portrait-primary",
-                icons: [
-                    { src: iconUrl, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
-                    { src: iconUrl, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
-                ]
-            };
-
-            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-            const link = document.createElement('link');
-            link.rel = 'manifest';
-            link.href = URL.createObjectURL(manifestBlob);
-            document.head.appendChild(link);
-
-            if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
-                const swCode = `
-                    self.addEventListener('install', () => self.skipWaiting());
-                    self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(fetch(e.request).catch(() => new Response('Modo Offline')));
-                    });
-                `;
-                const swBlob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
-            }
-        })();
-
-        let deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
+        window.addEventListener('appinstalled', () => {
+            window.__deferredInstallPrompt = null;
+            showToast('¡NovaFinance instalada en tu dispositivo!');
         });
 
         window.handleInstallClick = async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') showToast('Instalando NovaFinance...');
-                deferredPrompt = null;
+            const promptEvent = window.__deferredInstallPrompt;
+            if (promptEvent) {
+                promptEvent.prompt();
+                const { outcome } = await promptEvent.userChoice;
+                if (outcome === 'accepted') {
+                    showToast('Instalando NovaFinance...');
+                }
+                window.__deferredInstallPrompt = null;
             } else {
+                const isInIframe = window.self !== window.top;
+                const warnEl = document.getElementById('pwa-env-warning');
+                if (warnEl) {
+                    warnEl.classList.toggle('hidden', !isInIframe);
+                }
                 document.getElementById('install-modal').classList.remove('hidden');
                 document.getElementById('install-modal').classList.add('flex');
             }
